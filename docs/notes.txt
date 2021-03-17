@@ -1,0 +1,229 @@
+=== OVERVIEW ==================================================================
+
+Features
+  * queries RSS feeds within a process that can be executed as either a console
+    app, Windows service, or Azure WebJob
+  * stores historical items in server DB
+
+  * publishes feed of latest 100 items, which are rendered in the browser via
+    a referenced XSLT
+  * pushes new items to browser clients via SSE
+  * recovers from client disconnects by pushing catchup item messages,
+    using the Last-Event-ID header (Firefox incompatible)
+  * retrieves a set of catchup items on initial page launch (only if on LAN or
+    WAN).
+  * filters images and feed 'flare' before pushing to clients
+
+  * caches latest 5000 items in browser storage
+  * enables infinite scrolling of past 5000 items held in browser storage
+
+  * allows server feed management
+
+  * is responsive to device screen size
+  * allows user to set font size, saving preference in broweser's local storage
+  * highlights items which contain user-defined keywords
+  * allows searching by keyword, and download of results as XSLT using OpenXML
+
+  * logs system warnings and errors to server DB
+  * has been validated with unit tests
+  * exposes a WCF service which responds to both SOAP and JSON/HTTP requests
+  * exposes a WebAPI service which provides RESTful access
+  * displays a live heat map of news activity by state, using a clickable SVG
+    image
+
+Demonstrates:
+   * C#
+   * JavaScript
+   * Regex
+   * LINQ
+   * HTML
+   * CSS
+   * Responsive CSS
+   * MVC
+   * WCF
+   * WebAPI
+   * SOAP
+   * REST
+   * SSE
+   * WebSQL
+   * IndexedDB
+   * Web storage
+   * SQL
+   * RSS
+   * OpenXML
+   * XML
+   * XSLT
+   * XPath
+   * SVG
+   * log4net
+   * Windows system services
+   * Azure
+
+
+
+=== DDL =======================================================================
+
+CREATE TABLE rss_feed (
+   feed_id   INT            PRIMARY KEY IDENTITY(1, 1),
+   title     NVARCHAR(MAX)  NOT NULL,
+   url       NVARCHAR(MAX)  NOT NULL,
+   active    BIT            NOT NULL,
+   regional  BIT            NOT NULL
+);
+
+CREATE TABLE rss_item (
+   feed_id      INT            FOREIGN KEY REFERENCES rss_feed(feed_id),
+   ins_date     DATETIME2      NOT NULL DEFAULT (GETUTCDATE()),
+   pub_date     DATETIME2      NOT NULL,
+   title        NVARCHAR(450)  NOT NULL,
+   description  NVARCHAR(MAX),
+   url          NVARCHAR(400)  PRIMARY KEY,
+   xml          XML
+);
+
+CREATE TABLE state (
+   name       NVARCHAR(25)  NOT NULL,
+   abbr       NCHAR(2) NOT  NULL,
+   ref_count  INT           NOT NULL DEFAULT 0
+);
+
+CREATE TABLE log4net (
+   id         INT            IDENTITY (1, 1) NOT NULL,
+   date       DATETIME       NOT NULL,
+   thread     VARCHAR(255)   NOT NULL,
+   level      VARCHAR(50)    NOT NULL,
+   logger     VARCHAR(255)   NOT NULL,
+   message    VARCHAR(4000)  NOT NULL,
+   exception  VARCHAR(2000)  NULL
+);
+
+
+
+=== RSS ELEMENTS ==============================================================
+Name         Namespace
+---------- : --------------------------------------------
+abcnews    : http://abcnews.com/content/
+atom       : http://www.w3.org/2005/Atom
+content    : http://purl.org/rss/1.0/modules/content/
+dc         : http://purl.org/dc/elements/1.1/
+feedburner : http://rssnamespace.org/feedburner/ext/1.0
+geo        : http://www.w3.org/2003/01/geo/wgs84_pos#
+georss     : http://www.georss.org/georss
+itunes     : http://www.itunes.com/dtds/podcast-1.0.dtd
+media      : http://search.yahoo.com/mrss/
+npr        : https://www.npr.org/rss/
+nprml      : https://api.npr.org/nprml
+nyt        : http://www.nytimes.com/namespaces/rss/2.0
+rdf        : http://www.w3.org/1999/02/22-rdf-syntax-ns#
+slash      : http://purl.org/rss/1.0/modules/slash/
+sy         : http://purl.org/rss/1.0/modules/syndication/
+wfw        : http://wellformedweb.org/CommentAPI/
+
+/rss/channel
+/rss/channel/feedburner:browserFriendly
+/rss/channel/feedburner:browserFriendly/#text
+/rss/channel/copyright
+/rss/channel/copyright/#cdata-section
+/rss/channel/copyright/#text
+/rss/channel/description
+/rss/channel/description/#cdata-section
+/rss/channel/description/#text
+/rss/channel/feedburner:feedFlare
+/rss/channel/feedburner:feedFlare/#text
+/rss/channel/generator
+/rss/channel/generator/#text
+/rss/channel/image
+/rss/channel/image/description
+/rss/channel/image/description/#text
+/rss/channel/image/height
+/rss/channel/image/height/#text
+/rss/channel/image/link
+/rss/channel/image/link/#text
+/rss/channel/image/title
+/rss/channel/image/title/#text
+/rss/channel/image/url
+/rss/channel/image/url/#text
+/rss/channel/image/width
+/rss/channel/image/width/#text
+/rss/channel/feedburner:info
+/rss/channel/language
+/rss/channel/language/#cdata-section
+/rss/channel/language/#text
+/rss/channel/lastBuildDate
+/rss/channel/lastBuildDate/#text
+/rss/channel/link
+/rss/channel/link/#text
+/rss/channel/atom:link
+/rss/channel/atom10:link
+/rss/channel/pubDate
+/rss/channel/pubDate/#text
+/rss/channel/robots
+/rss/channel/site
+/rss/channel/site/#text
+/rss/channel/thespringbox:skin
+/rss/channel/thespringbox:skin/#text
+/rss/channel/title
+/rss/channel/title/#cdata-section
+/rss/channel/title/#text
+/rss/channel/ttl
+/rss/channel/ttl/#text
+/rss/channel/sy:updateFrequency
+/rss/channel/sy:updateFrequency/#text
+/rss/channel/sy:updatePeriod
+/rss/channel/sy:updatePeriod/#text
+
+/rss/channel/item
+/rss/channel/item/author
+/rss/channel/item/author/#cdata-section
+/rss/channel/item/author/#text
+/rss/channel/item/category
+/rss/channel/item/category/#cdata-section
+/rss/channel/item/category/#text
+/rss/channel/item/comments
+/rss/channel/item/comments/#text
+/rss/channel/item/slash:comments
+/rss/channel/item/slash:comments/#text
+/rss/channel/item/wfw:commentRss
+/rss/channel/item/wfw:commentRss/#text
+/rss/channel/item/media:content
+/rss/channel/item/media:content/media:credit
+/rss/channel/item/media:content/media:credit/#cdata-section
+/rss/channel/item/media:content/media:credit/#text
+/rss/channel/item/media:content/media:description
+/rss/channel/item/media:content/media:description/#cdata-section
+/rss/channel/item/media:content/media:title
+/rss/channel/item/media:content/media:title/#text
+/rss/channel/item/dc:creator
+/rss/channel/item/dc:creator/#cdata-section
+/rss/channel/item/dc:creator/#text
+/rss/channel/item/media:credit
+/rss/channel/item/media:credit/#text
+/rss/channel/item/description
+/rss/channel/item/description/#cdata-section
+/rss/channel/item/description/#text
+/rss/channel/item/media:description
+/rss/channel/item/media:description/#text
+/rss/channel/item/enclosure
+/rss/channel/item/content:encoded
+/rss/channel/item/content:encoded/#cdata-section
+/rss/channel/item/media:group
+/rss/channel/item/media:group/media:content
+/rss/channel/item/guid
+/rss/channel/item/guid/#cdata-section
+/rss/channel/item/guid/#text
+/rss/channel/item/media:keywords
+/rss/channel/item/media:keywords/#text
+/rss/channel/item/link
+/rss/channel/item/link/#cdata-section
+/rss/channel/item/link/#text
+/rss/channel/item/atom:link
+/rss/channel/item/feedburner:origLink
+/rss/channel/item/feedburner:origLink/#text
+/rss/channel/item/post-id
+/rss/channel/item/post-id/#text
+/rss/channel/item/pubDate
+/rss/channel/item/pubDate/#text
+/rss/channel/item/media:thumbnail
+/rss/channel/item/title
+/rss/channel/item/title/#cdata-section
+/rss/channel/item/title/#text
