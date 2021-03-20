@@ -9,15 +9,23 @@ function createDB()
    // ask browser to request user verification before clearing storage data
    if (navigator.storage  &&  navigator.storage.persist)
    {
-      navigator.storage.persist().then(function (e)
+      navigator.storage.persisted().then(function (isPersisted)
       {
-         console.log("Storage persistance request honored? " + e);
+         if (isPersisted)
+            console.log("Storage persistance is active");
+         else
+         {
+            navigator.storage.persist().then(function (wasHonored)
+            {
+               console.log("Storage persistance request honored? " + wasHonored);
+            });
+         }
       });
    }
 
    if (!!window.indexedDB)
       createIndexedDB();
-   //else
+   else
    if (!!window.openDatabase)
       createWebSQL();
 }
@@ -26,7 +34,7 @@ function addItemToDB(item)
 {
    if (!!window.indexedDB)
       insertIndexedDBObj(item);
-   //else
+   else
    if (!!window.openDatabase)
       insertWebSQLRow(item);
 }
@@ -35,7 +43,7 @@ const getOlderItemsFromDB = (url, date, count) => new Promise(function (resolve)
 {
    if (!!window.indexedDB)
       getOlderIndexedDBItems(url, date, count, resolve);
-   //else
+   else
    if (!!window.openDatabase)
       getOlderWebSQLItems(url, date, count, resolve);
 });
@@ -44,7 +52,7 @@ const getMaxItemStamp = () => new Promise(function (resolve)
 {
    if (!!window.indexedDB)
       getMaxIndexedDBItemStamp(resolve);
-   //else
+   else
    if (!!window.openDatabase)
       getMaxWebSQLItemStamp(resolve);
 });
