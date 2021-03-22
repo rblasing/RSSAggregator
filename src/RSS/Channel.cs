@@ -24,10 +24,13 @@ namespace RSS
 
       public IEnumerable<Item> items
       {
-         get { if (item == null  ||  item.Length < 1)
+         get
+         {
+            if (item == null  ||  item.Length < 1)
                return null;
             else
-               return item.AsEnumerable<Item>(); }
+               return item.AsEnumerable<Item>();
+         }
       }
 
       // some publishers don't include date elements, inject ad links, etc.,
