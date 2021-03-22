@@ -13,12 +13,12 @@ namespace RSS
    /// </summary>
    public class Channel : RSSBase
    {
-      public string title;
-      public string url;
-      public string description;
-      public DateTime pubDate;
-      public DateTime lastBuildDate;
-      public Item[] item;
+      public string title { get; private set; }
+      public string url { get; private set; }
+      public string description { get; private set; }
+      public DateTime pubDate { get; private set; }
+      public DateTime lastBuildDate { get; private set; }
+      public Item[] item { get; private set; }
 
       // some publishers don't include date elements, inject ad links, etc.,
       // so keep a list of invalid items. This will allow us to identify
