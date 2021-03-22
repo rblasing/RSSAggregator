@@ -8,7 +8,7 @@ namespace RSSAggregatorSvc
 {
    public partial class RSSAggregatorSvc : ServiceBase
    {
-      System.Threading.Thread workerThread = null;
+      private System.Threading.Thread workerThread = null;
       private bool stopRequested = false;
 
 

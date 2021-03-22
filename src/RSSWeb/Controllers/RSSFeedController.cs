@@ -13,7 +13,7 @@ using Util;
 
 namespace Portfolio.Controllers
 {
-   [BasicAuthenticationAttribute("admin", "8675301", BasicRealm = "Portfolio")]
+   [BasicAuthenticationAttribute("admin", "8675309", BasicRealm = "Portfolio")]
    public class RSSFeedController : Controller
    {
       private static readonly string connStr =

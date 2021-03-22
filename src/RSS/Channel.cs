@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 
 
@@ -18,12 +19,30 @@ namespace RSS
       public string description { get; private set; }
       public DateTime pubDate { get; private set; }
       public DateTime lastBuildDate { get; private set; }
-      public Item[] item { get; private set; }
+
+      private Item[] item;
+
+      public IEnumerable<Item> items
+      {
+         get { if (item == null  ||  item.Length < 1)
+               return null;
+            else
+               return item.AsEnumerable<Item>(); }
+      }
 
       // some publishers don't include date elements, inject ad links, etc.,
       // so keep a list of invalid items. This will allow us to identify
       // specific problems and design workarounds if desired.
-      public readonly List<RSSException> parseErrors = new List<RSSException>();
+      private readonly List<RSSException> parseErrors = new List<RSSException>();
+
+
+      public IEnumerable<ParserError> errors()
+      {
+         if (parseErrors != null  &&  parseErrors.Count > 0)
+            return (from e in parseErrors select e.error);
+         else
+            return null;
+      }
 
       
       public void read(XmlNode n)

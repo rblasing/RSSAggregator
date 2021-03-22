@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 
 namespace RSS
@@ -28,10 +27,7 @@ namespace RSS
 
       public IEnumerable<ParserError> errors()
       {
-         if (rssDoc.channel.parseErrors != null  &&  rssDoc.channel.parseErrors.Count > 0)
-            return (from e in rssDoc.channel.parseErrors select e.error);
-         else
-            return null;
+         return rssDoc.channel.errors();
       }
    }
 }

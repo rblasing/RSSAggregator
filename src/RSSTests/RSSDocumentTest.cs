@@ -16,7 +16,13 @@ namespace RSSTests
       {
          RSSDocument r = new RSSDocument(testRssNode);
          Assert.AreEqual((decimal)2, r.version);
-         Assert.AreEqual(1, r.channel.item.Length);
+
+         int itemCount = 0;
+
+         foreach (var item in r.channel.items)
+            itemCount++;
+
+         Assert.AreEqual(1, itemCount);
       }
    }
 }

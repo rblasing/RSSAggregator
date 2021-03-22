@@ -23,7 +23,7 @@ namespace RSSTests
 
          Assert.AreEqual("Channel title", c.title);
          Assert.AreEqual("Channel description", c.description);
-         Assert.IsNotNull(c.item);
+         Assert.IsNotNull(c.items);
          Assert.AreEqual(new DateTime(2020, 10, 28, 1, 38, 0, DateTimeKind.Utc), c.lastBuildDate);
          Assert.AreEqual(new DateTime(2020, 10, 30, 1, 38, 0, DateTimeKind.Utc), c.pubDate);
          Assert.AreEqual("http://sitename/newsFeed.rss", c.url);

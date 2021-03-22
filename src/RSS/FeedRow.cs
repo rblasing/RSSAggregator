@@ -30,7 +30,7 @@ namespace RSS
       /// </summary>
       public void save(IDAL dal)
       {
-         foreach (Item item in rssDoc.channel.item)
+         foreach (Item item in rssDoc.channel.items)
          {
             if (!dal.itemExists(item.url))
                dal.insertItem(feedId, item);
