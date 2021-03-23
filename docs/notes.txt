@@ -1,30 +1,30 @@
 === OVERVIEW ==================================================================
 
 Features
-  * queries RSS feeds within a process that can be executed as either a console
+Â  * queries RSS feeds within a process that can be executed as either a console
     app, Windows service, or Azure WebJob
-  * stores historical items in server DB
+Â  * stores historical items in server DB
 
-  * publishes feed of latest 100 items, which are rendered in the browser via
+Â  * publishes feed of latest 100 items, which are rendered in the browser via
     a referenced XSLT
   * pushes new items to browser clients via SSE
-  * recovers from client disconnects by pushing catchup item messages,
+Â  * recovers from client disconnects by pushing catchup item messages,
     using the Last-Event-ID header (Firefox incompatible)
   * retrieves a set of catchup items on initial page launch (only if on LAN or
     WAN).
-  * filters images and feed 'flare' before pushing to clients
+Â  * filters images and feed 'flare' before pushing to clients
 
-  * caches latest 5000 items in browser storage
-  * enables infinite scrolling of past 5000 items held in browser storage
+Â  * caches latest 5000 items in browser storage
+Â  * enables infinite scrolling of past 5000 items held in browser storage
 
   * allows server feed management
 
   * is responsive to device screen size
-  * allows user to set font size, saving preference in broweser's local storage
-  * highlights items which contain user-defined keywords
-  * allows searching by keyword, and download of results as XSLT using OpenXML
+Â  * allows user to set font size, saving preference in broweser's local storage
+Â  * highlights items which contain user-defined keywords
+Â  * allows searching by keyword, and download of results as XSLT using OpenXML
 
-  * logs system warnings and errors to server DB
+Â  * logs system warnings and errors to server DB
   * has been validated with unit tests
   * exposes a WCF service which responds to both SOAP and JSON/HTTP requests
   * exposes a WebAPI service which provides RESTful access
@@ -32,32 +32,32 @@ Features
     image
 
 Demonstrates:
-   * C#
-   * JavaScript
-   * Regex
+Â  Â * C#
+Â  Â * JavaScript
+Â  Â * Regex
    * LINQ
-   * HTML
-   * CSS
-   * Responsive CSS
-   * MVC
-   * WCF
+Â  Â * HTML
+Â  Â * CSS
+Â  Â * Responsive CSS
+Â  Â * MVC
+Â  Â * WCF
    * WebAPI
-   * SOAP
-   * REST
-   * SSE
-   * WebSQL
-   * IndexedDB
-   * Web storage
-   * SQL
-   * RSS
-   * OpenXML
-   * XML
-   * XSLT
-   * XPath
+Â  Â * SOAP
+Â  Â * REST
+Â  Â * SSE
+Â  Â * WebSQL
+Â  Â * IndexedDB
+Â  Â * Web storage
+Â  Â * SQL
+Â  Â * RSS
+Â  Â * OpenXML
+Â  Â * XML
+Â  Â * XSLT
+Â  Â * XPath
    * SVG
-   * log4net
+Â  Â * log4net
    * Windows system services
-   * Azure
+Â  Â * Azure
 
 
 
@@ -80,6 +80,8 @@ CREATE TABLE rss_item (
    url          NVARCHAR(400)  PRIMARY KEY,
    xml          XML
 );
+
+CREATE INDEX idx_item_ins_date ON rss_item(ins_date);
 
 CREATE TABLE state (
    name       NVARCHAR(25)  NOT NULL,
