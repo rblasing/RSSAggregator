@@ -35,6 +35,10 @@ $cmd.CommandText = "CREATE TABLE rss_item (feed_id INT FOREIGN KEY REFERENCES rs
 $cmd.Connection = $db
 $cmd.ExecuteNonQuery()
 
+$cmd.CommandText = "CREATE INDEX idx_item_ins_date ON rss_item(ins_date)"
+$cmd.Connection = $db
+$cmd.ExecuteNonQuery()
+
 $cmd.CommandText = "CREATE TABLE state (name NVARCHAR(25) NOT NULL, abbr NCHAR(2) NOT NULL, ref_count INT NOT NULL DEFAULT 0)"
 $cmd.Connection = $db
 $cmd.ExecuteNonQuery()
