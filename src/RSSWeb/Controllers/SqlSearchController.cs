@@ -39,29 +39,22 @@ namespace RSSWeb.Controllers
             switch (Execute)
             {
                case "Media types":
-                  dt = dal.Select("WITH t AS (SELECT xml.value('data(/item[1]/enclosure[1]/@type)', 'nvarchar(50)') AS type FROM rss_item WHERE xml.exist('/item/enclosure') = 1) " +
-                     "SELECT t.type [Media Type], COUNT(*) [Count] FROM t GROUP BY t.type");
-
+                  dt = dal.SelectExec("SelectMIMETypes");
                   Session["dt"] = dt;
                   break;
 
                case "NASA references":
-                  dt = dal.Select("SELECT title [Title] FROM rss_item WHERE xml.exist('/item/description/text()[contains(lower-case(.), \"nasa\")]') = 1");
+                  dt = dal.SelectExec("SelectNASAArticles");
                   Session["dt"] = dt;
                   break;
 
                case "Daily distribution":
-                  dt = dal.Select("WITH t AS (SELECT xml.value('upper-case(substring(string((/item/pubDate)[1]), 1, 3))', 'nchar(3)') AS d FROM rss_item WHERE xml.exist('/item/pubDate') = 1) " +
-                     "SELECT t.d [Day], COUNT(*) [Count] FROM t GROUP BY t.d ORDER BY COUNT(*) DESC");
-
+                  dt = dal.SelectExec("SelectDailyDistribution");
                   Session["dt"] = dt;
                   break;
 
                case "Creators":
-                  dt = dal.Select("SELECT DISTINCT CAST(xml.query('declare namespace dc=\"http://purl.org/dc/elements/1.1/\"; /item/dc:creator/text()') AS NVARCHAR(400)) [Creator] FROM rss_item WHERE " +
-                     "xml.exist('declare namespace dc=\"http://purl.org/dc/elements/1.1/\"; /item/dc:creator') = 1 AND " +
-                     "feed_id = (SELECT feed_id FROM rss_feed WHERE title = 'NPR All Things Considered') ORDER BY [Creator]");
-
+                  dt = dal.SelectExec("SelectNPRAuthors");
                   Session["dt"] = dt;
                   break;
 
