@@ -281,17 +281,13 @@ namespace RSSTests
 
 
       [TestMethod]
-      public void SelectTest()
+      public void SelectExecTest()
       {
          InitDb();
 
-         DataTable dt = _dal.Select("SELECT title FROM rss_feed");
-         Assert.AreEqual(1, dt.Columns.Count);
-         Assert.AreEqual("title", dt.Columns[0].ColumnName);
-         Assert.AreEqual(3, dt.Rows.Count);
-         Assert.AreEqual("Test feed 1", dt.Rows[0][0]);
-         Assert.AreEqual("Test feed 2", dt.Rows[1][0]);
-         Assert.AreEqual("Test feed 3", dt.Rows[2][0]);
+         DataTable dt = _dal.SelectExec("SelectDailyDistribution");
+         Assert.AreEqual(2, dt.Columns.Count);
+         Assert.AreEqual(7, dt.Rows.Count);
       }
 
 
