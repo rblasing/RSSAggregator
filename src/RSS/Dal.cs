@@ -692,18 +692,19 @@ namespace RSS
 
       #region demoHelpers
       /// <summary>
-      /// Execute an arbitrary SQL SELECT statement.
+      /// Execute an arbitrary SQL stored procedure.
       /// 
       /// Um, don't put something like this in a real app, m'kay?
       /// </summary>
-      public DataTable Select(string sql)
+      public DataTable SelectExec(string procName)
       {
          DbCommand cmd = null;
 
          try
          {
             cmd = _dbConn.CreateCommand();
-            cmd.CommandText = sql;
+            cmd.CommandText = procName;
+            cmd.CommandType = CommandType.StoredProcedure;
 
             return SelectToDataTable(cmd);
          }
