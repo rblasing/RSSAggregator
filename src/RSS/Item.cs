@@ -39,7 +39,7 @@ namespace RSS
             if (!string.IsNullOrWhiteSpace(Description))
             {
                XmlDocument xDoc = new XmlDocument();
-               xDoc.LoadXml(Description);
+               xDoc.LoadXml($"<doc>{Description}</doc>");
             }
          }
          catch (System.Xml.XmlException)
