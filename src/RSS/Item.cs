@@ -36,8 +36,11 @@ namespace RSS
          // don't persist invalidly-formed HTML fragments
          try
          {
-            XmlDocument xDoc = new XmlDocument();
-            xDoc.LoadXml(Description);
+            if (!string.IsNullOrWhiteSpace(Description))
+            {
+               XmlDocument xDoc = new XmlDocument();
+               xDoc.LoadXml(Description);
+            }
          }
          catch (System.Xml.XmlException)
          {
