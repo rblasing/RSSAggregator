@@ -33,6 +33,17 @@ namespace RSS
          Title = SelectString(n, "title", true);
          Description = RemoveAds(SelectString(n, "description", false));
 
+         // don't persist invalidly-formed HTML fragments
+         try
+         {
+            XmlDocument xDoc = new XmlDocument();
+            xDoc.LoadXml(Description);
+         }
+         catch (System.Xml.XmlException)
+         {
+            Description = string.Empty;
+         }
+
          // the item link might be in any of the following elements
          Url = SelectString(n, "guid", false);
 
