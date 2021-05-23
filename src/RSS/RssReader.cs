@@ -22,7 +22,7 @@ namespace RSS
 
          try
          {
-            new WebClient() { Encoding = System.Text.Encoding.UTF8 };
+            wc = new WebClient() { Encoding = System.Text.Encoding.UTF8 };
             string xmlResponse = wc.DownloadString(_url);
 
             return new RssDocument(xmlResponse);
