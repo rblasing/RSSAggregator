@@ -11,7 +11,7 @@ This application provides consumers with a consolidated view of a set of RSS new
 | [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) | [OpenXML](https://docs.microsoft.com/en-us/office/open-xml/about-the-open-xml-sdk) | SQL/XML | AJAX | | |  
 
 <br /><br />
-A live demo is available at [zoot.azurewebsites.net/news](https://zoot.azurewebsites.net/news)
+<!-- A live demo is available at [zoot.azurewebsites.net/news](https://zoot.azurewebsites.net/news) -->
 <br /><br />
 
 ## Features
