@@ -777,7 +777,7 @@ WHERE i.ins_date > DATEADD(HOUR, -@hour, GETUTCDATE()) AND word NOT IN (SELECT w
             cmd = _dbConn.CreateCommand();
             cmd.CommandText = @"SELECT ins_date, i.title, description FROM rss_item i 
                INNER JOIN rss_feed AS f ON (f.feed_id = i.feed_id AND f.regional = 0) WHERE
-               i.ins_date > DATEADD(HOUR, -@h, GETUTCDATE()) AND (i.title + ' ' + i.description) LIKE '%' + @word + '%'";
+               i.ins_date > DATEADD(HOUR, -@h, GETUTCDATE()) AND LOWER(i.title + ' ' + i.description) LIKE '%' + @word + '%'";
 
             cmd.Parameters.Add(CreateParameter(cmd, "@h", DbType.Int32, hours));
             cmd.Parameters.Add(CreateParameter(cmd, "@word", DbType.String, word));
