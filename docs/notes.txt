@@ -55,6 +55,7 @@ Demonstrates:
    * XSLT
    * XPath
    * SVG
+   * Canvas
    * log4net
    * Windows system services
    * Azure
@@ -87,6 +88,10 @@ CREATE TABLE state (
    name       NVARCHAR(25)  NOT NULL,
    abbr       NCHAR(2) NOT  NULL,
    ref_count  INT           NOT NULL DEFAULT 0
+);
+
+CREATE TABLE ignore_word (
+   word NVARCHAR(100) PRIMARY KEY
 );
 
 CREATE TABLE log4net (
