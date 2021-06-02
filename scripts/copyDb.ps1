@@ -1,5 +1,5 @@
-﻿cls
-$azure = "Server=tcp:___.database.windows.net,1433;Initial Catalog=DTS;Persist Security Info=False;User ID=___;Password=___;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30"
+cls
+$azure = "Server=tcp:userid.database.windows.net,1433;Initial Catalog=DTS;Persist Security Info=False;User ID=___;Password=___;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30"
 $local = "Data Source=___;Initial Catalog=RSS;timeout=1200;Integrated Security=true"
 
 $dest = new-object System.Data.SqlClient.SqlConnection
@@ -24,6 +24,11 @@ $cmd.CommandText = "DELETE FROM rss_feed"
 $cmd.ExecuteNonQuery()
 "rss feeds deleted"
 
+$cmd.Connection = $dest
+$cmd.CommandText = "DELETE FROM ignore_word"
+$cmd.ExecuteNonQuery()
+"ignore words deleted"
+
 $bulk = new-object System.Data.SqlClient.SqlBulkCopy($azure, [System.Data.SqlClient.SqlBulkCopyOptions]::KeepIdentity);
 $bulk.BatchSize = 1000
 $bulk.NotifyAfter = 2000
@@ -42,6 +47,14 @@ $cmd.CommandText = "SELECT * FROM rss_item WITH (NOLOCK)"
 $cmd.Connection = $src
 $dr = $cmd.ExecuteReader()
 $bulk.DestinationTableName = "rss_item"
+$bulk.WriteToServer($dr)
+$dr.Close()
+
+# copy ignore words
+$cmd.CommandText = "SELECT * FROM ignore_word WITH (NOLOCK)"
+$cmd.Connection = $src
+$dr = $cmd.ExecuteReader()
+$bulk.DestinationTableName = "ignore_word"
 $bulk.WriteToServer($dr)
 $dr.Close()
 
