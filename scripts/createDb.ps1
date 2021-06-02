@@ -1,6 +1,6 @@
-﻿# Copyright, 2020, Richard Blasingame
+# Copyright, 2020, Richard Blasingame
 
-$azure = "Server=tcp:___.database.windows.net,1433;Initial Catalog=DTS;Persist Security Info=False;User ID=___;Password=___;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30"
+$azure = "Server=tcp:userid.database.windows.net,1433;Initial Catalog=DTS;Persist Security Info=False;User ID=___;Password=___;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30"
 $local = "Data Source=___;Initial Catalog=RSS;timeout=1200;Integrated Security=true"
 
 $db = new-object System.Data.SqlClient.SqlConnection
@@ -20,6 +20,10 @@ $cmd.ExecuteNonQuery()
 
 $cmd.Connection = $db
 $cmd.CommandText = "DROP TABLE state"
+$cmd.ExecuteNonQuery()
+
+$cmd.Connection = $db
+$cmd.CommandText = "DROP TABLE ignore_word"
 $cmd.ExecuteNonQuery()
 
 $cmd.Connection = $db
@@ -43,6 +47,10 @@ $cmd.CommandText = "CREATE TABLE state (name NVARCHAR(25) NOT NULL, abbr NCHAR(2
 $cmd.Connection = $db
 $cmd.ExecuteNonQuery()
 
+$cmd.CommandText = "CREATE TABLE ignore_word (word NVARCHAR(100) PRIMARY KEY)"
+$cmd.Connection = $db
+$cmd.ExecuteNonQuery()
+
 $cmd.CommandText = "CREATE TABLE log4net (id INT IDENTITY (1, 1) NOT NULL, date DATETIME NOT NULL, thread VARCHAR(255) NOT NULL, level VARCHAR(50) NOT NULL, logger VARCHAR(255) NOT NULL, message VARCHAR(4000) NOT NULL, exception VARCHAR(2000) NULL)"
 $cmd.Connection = $db
 $cmd.ExecuteNonQuery()
@@ -54,8 +62,8 @@ $feeds = "INSERT INTO rss_feed (title, url, active, regional) VALUES ('CNN', 'ht
    "INSERT INTO rss_feed (title, url, active, regional) VALUES ('FOX News', 'http://feeds.foxnews.com/foxnews/latest', 1, 0)",
    "INSERT INTO rss_feed (title, url, active, regional) VALUES ('USA Today', 'http://rssfeeds.usatoday.com/UsatodaycomNation-TopStories', 1, 0)",
    "INSERT INTO rss_feed (title, url, active, regional) VALUES ('NPR', 'http://www.npr.org/rss/rss.php?id=1001', 1, 0)",
-   "INSERT INTO rss_feed (title, url, active, regional) VALUES ('LA Times', 'https://www.latimes.com/local/rss2.0.xml', 1, 1)",
-   "INSERT INTO rss_feed (title, url, active, regional) VALUES ('NBC News', 'http://www.nbcnews.com/id/3032091/device/rss/rss.xml', 1, 0)",
+   "INSERT INTO rss_feed (title, url, active, regional) VALUES ('The Los Angeles Times', 'https://www.latimes.com/local/rss2.0.xml', 1, 1)",
+   "INSERT INTO rss_feed (title, url, active, regional) VALUES ('NBC News', 'http://feeds.nbcnews.com/nbcnews/public/news', 1, 0)",
    "INSERT INTO rss_feed (title, url, active, regional) VALUES ('ABC News', 'http://feeds.abcnews.com/abcnews/topstories', 1, 0)",
    "INSERT INTO rss_feed (title, url, active, regional) VALUES ('NPR All Things Considered', 'https://feeds.npr.org/2/rss.xml', 1, 0)",
    "INSERT INTO rss_feed (title, url, active, regional) VALUES ('Savannah Now', 'https://www.savannahnow.com/news?template=rss&mime=xml', 1, 1)",
@@ -77,6 +85,9 @@ $feeds = "INSERT INTO rss_feed (title, url, active, regional) VALUES ('CNN', 'ht
    "INSERT INTO rss_feed (title, url, active, regional) VALUES ('Marietta Daily Journal', 'https://www.mdjonline.com/search/?f=rss&t=article&c=neighbor_newspapers&l=50&s=start_time&sd=desc', 1, 1)"
    "INSERT INTO rss_feed (title, url, active, regional) VALUES ('BBC Top Stories', 'http://feeds.bbci.co.uk/news/rss.xml', 1, 0)"
    "INSERT INTO rss_feed (title, url, active, regional) VALUES ('BBC World', 'http://feeds.bbci.co.uk/news/world/rss.xml', 1, 0)"
+   "INSERT INTO rss_feed (title, url, active, regional) VALUES ('CBS News', 'https://www.cbsnews.com/latest/rss/main', 1, 0)"
+   "INSERT INTO rss_feed (title, url, active, regional) VALUES ('NewsWeek', 'https://www.newsweek.com/rss', 1, 0)"
+
 
 $feeds | foreach {
    $cmd.CommandText = $_
@@ -155,6 +166,114 @@ $states | foreach {
    $cmd.Connection = $db
    $cmd.ExecuteNonQuery()
 }
+
+
+$ignoreWords = 
+"sunday",
+"monday",
+"tuesday",
+"wednesday",
+"thursday",
+"friday",
+"saturday",
+"one",
+"two",
+"three",
+"four",
+"five",
+"six",
+"seven",
+"eight",
+"nine",
+"ten",
+
+"also",
+"amp;#8212",
+"amp;#8230",
+"are",
+"bbc"
+"back", 
+"be", 
+"been", 
+"big", 
+"can", 
+"cbs",
+"cbsn",
+"cnn",
+"could", 
+"day", 
+"did", 
+"do", 
+"does", 
+"doesn't", 
+"ever", 
+"every", 
+"get", 
+"gets", 
+"got", 
+"had", 
+"has", 
+"have", 
+"here", 
+"how", 
+"know", 
+"i'm", 
+"if", 
+"is", 
+"isn't", 
+"let", 
+"live", 
+"make", 
+"man", 
+"may", 
+"might", 
+"more", 
+"much", 
+"must", 
+"new", 
+"news", 
+"next", 
+"no", 
+"not", 
+"now"
+"npr", 
+"only", 
+"put", 
+"said", 
+"say", 
+"says", 
+"seen", 
+"set", 
+"should", 
+"still", 
+"then", 
+"today",
+"told",
+"too", 
+"top", 
+"until", 
+"u.s",
+"was", 
+"were", 
+"when", 
+"while", 
+"why", 
+"will", 
+"would";
+
+$ignoreWords | foreach {
+   $cmd = new-object System.Data.SqlClient.SqlCommand
+   $cmd.CommandText = "INSERT INTO ignore_word (word) VALUES (@w)";
+
+   $p = new-object System.Data.SqlClient.SqlParameter
+   $p.ParameterName = "@w"
+   $p.Value = $_
+   $junk = $cmd.Parameters.Add($p)
+
+   $cmd.Connection = $db
+   $cmd.ExecuteNonQuery();
+}
+
 
 $cmd.Connection = $db
 $cmd.CommandText = "CREATE PROCEDURE SelectMIMETypes
