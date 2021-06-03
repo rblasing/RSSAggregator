@@ -1,0 +1,279 @@
+﻿<!-- Copyright 2021 Richard Blasingame -->
+
+@{
+   ViewBag.Title = "Word Trends";
+   Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section id="trendingWords" style="width: 98%">
+   <input id="hourSlider" type="range" min="8" max="72" step="1" value="24" 
+      onchange="sliderMove();" oninput="hourOutput.value = this.value + ' hours'" 
+      style="margin: 1% 0 1% 1%" />
+
+   <output id="hourOutput" for="hourSlider">24 hours</output>
+
+   <canvas id="cvs" width="600" height="350" class="canvas"></canvas>
+</section>
+
+<style type="text/css">
+   .canvas {
+      padding: 0;
+      border: 0;
+      margin-left: 1%;
+      margin-right: 1%;
+      display: inline;
+   }
+</style>
+
+<script type="text/javascript" src="~/scripts/CCanvas.js"></script>
+
+<script type="text/javascript">
+   let barHeight = 20;
+   let barCanvas = null;
+   let words;
+   let selectedWord = null;
+   let trend;
+
+   let emptyTrend = [{ hr: "01", cnt: 0 }, { hr: "02", cnt: 0 }, { hr: "03", cnt: 0 },
+      { hr: "04", cnt: 0 }, { hr: "05", cnt: 0 }, { hr: "06", cnt: 0 },
+      { hr: "07", cnt: 0 }, { hr: "08", cnt: 0 }, { hr: "09", cnt: 0 },
+      { hr: "10", cnt: 0 }, { hr: "11", cnt: 0 }, { hr: "12", cnt: 0 },
+      { hr: "13", cnt: 0 }, { hr: "14", cnt: 0 }, { hr: "15", cnt: 0 },
+      { hr: "16", cnt: 0 }, { hr: "17", cnt: 0 }, { hr: "18", cnt: 0 },
+      { hr: "19", cnt: 0 }, { hr: "20", cnt: 0 }, { hr: "21", cnt: 0 },
+      { hr: "22", cnt: 0 }, { hr: "23", cnt: 0 }, { hr: "00", cnt: 0 }];
+
+
+   function mouseEnter(e)
+   {
+   }
+
+
+   function mouseExit(e)
+   {
+      barCanvas.mouseX = -1;
+      barCanvas.mouseY = -1;
+      paint();
+   }
+
+
+   function mouseMove(e)
+   {
+      barCanvas.mouseX = e.offsetX;
+      barCanvas.mouseY = e.offsetY;
+      paint();
+   }
+
+
+   function mouseDown(e)
+   {
+      barCanvas.mouseX = e.offsetX;
+      barCanvas.mouseY = e.offsetY;
+      selectedWord = null;
+
+      for (let x = 0; x < words.length; x++)
+      {
+         if (e.offsetY >= words[x].top  &&  e.offsetY <= words[x].top + barHeight)
+         {
+            trend = emptyTrend;
+            selectedWord = words[x].word;
+            getWordHistory();
+         }
+      }
+
+      paint();
+   }
+
+
+   function sliderMove()
+   {
+      let hr = document.getElementById("hourSlider").value;
+
+      fetch('@Url.Content("~/")' + `WordTrends/GetTrendingWords?hours=${hr}`)
+         .then(rsp => rsp.json()).then(data =>
+      {
+         words = JSON.parse(data);
+
+         if (selectedWord != null)
+            getWordHistory();
+         else
+            paint();
+      });
+   }
+
+
+   let animationPercent = 0;
+
+   function paint()
+   {
+      // only animate bars on initial page load: once the percentage reaches
+      // 100, don't reset it
+      if (animationPercent < 100)
+      {
+         animationPercent += 5;
+
+         if (animationPercent > 100)
+            animationPercent = 100;
+
+         requestAnimationFrame(paint);
+      }
+
+      // clear vertical scrollbar
+      barCanvas.canvas.width = window.innerWidth - 40;
+
+      // leave a 5-pixel space between bars
+      barCanvas.canvas.height = (barHeight + 5) * 100;
+
+      barCanvas.clear("#FFFFFF");
+
+      // words[0].cnt should be the most popular word
+      let wordStep = (barCanvas.canvas.width - 10) / words[0].cnt;
+
+      let leaveGap = false;
+      let left = 0;
+      let graphHeight = 100;
+
+      // draw the bar graph
+      for (let x = 0; x < words.length; x++)
+      {
+         let barWidth = (wordStep * words[x].cnt) * (animationPercent / 100);
+         let barTop = x * (barHeight + 5);
+
+         // leave space for the history graph
+         if (leaveGap)
+            barTop += graphHeight;
+
+         words[x].top = barTop;
+
+         // highlight bar when moused over
+         if (barCanvas.mouseY >= barTop  &&  barCanvas.mouseY <= barTop + barHeight)
+            barCanvas.context.fillStyle = "#DDB9DD";
+         else
+            barCanvas.context.fillStyle = "#FFDAFF";
+
+         // draw bar
+         barCanvas.drawFilledRoundRect(left, barTop, barWidth, barHeight, 5)
+
+         // draw word
+         barCanvas.context.fillStyle = "#770077";
+         barCanvas.context.font = "bold 14px Arial";
+         barCanvas.drawText(words[x].word, left + 5, barTop + barHeight, barHeight);
+
+         // draw count
+         barCanvas.context.font = "italic 14px Arial";
+
+         barCanvas.drawText(words[x].cnt,
+            barWidth - barCanvas.context.measureText(words[x].cnt).width - 5,
+            barTop + barHeight, barHeight);
+
+         // draw history graph if user clicked on a bar
+         if (words[x].word == selectedWord  &&  trend != null)
+         {
+            leaveGap = true;
+
+            let graphWidth = Math.min(barCanvas.canvas.width, (trend.length * 40));
+            let graphTop = barTop + barHeight + 5;
+            let graphBottom = barTop + barHeight + graphHeight;
+            let xStep = graphWidth / (trend.length - 1);
+            let trendMax = 0;
+
+            for (let t = 0; t < trend.length; t++)
+            {
+               if (trend[t].cnt > trendMax)
+                  trendMax = trend[t].cnt;
+            }
+
+            let yStep = 0;
+
+            if (trendMax > 0)
+               yStep = (graphBottom - graphTop) / trendMax;
+
+            // graph outline
+            barCanvas.drawBox(left, graphTop, graphWidth, graphBottom, 200, 200, 200);
+
+            // vert and horiz lines
+            for (let hr = 1; hr < trend.length; hr++)
+               barCanvas.drawLine(left + (hr * xStep), graphTop,
+                  left + (hr * xStep), graphBottom, 200, 200, 200);
+
+            for (let y = 1; y < trendMax; y++)
+               barCanvas.drawLine(left, (yStep * y) + graphTop,
+                  left + graphWidth, (yStep * y) + graphTop, 200, 200, 200);
+
+            let pts = new Array(trend.length).fill(null);
+
+            for (let t = 0; t < trend.length; t++)
+            {
+               pts[t] = new Point(xStep * t + left,
+                  graphBottom - (yStep * trend[t].cnt));
+
+               if (trend[t].cnt > 0)
+                  barCanvas.drawDot(pts[t].x, pts[t].y, 2, 2, 150, 150, 150);
+            }
+
+            // graph line
+            barCanvas.drawPolyLine(pts, 100, 100, 100);
+
+            // fade out right end of graph to white
+            barCanvas.fadeRight(pts[pts.length - 2].x, graphTop - 2,
+               xStep, graphBottom - graphTop + 4, 255, 255, 255);
+         }
+      }
+   }
+
+
+   function getWordHistory()
+   {
+      let hr = document.getElementById("hourSlider").value;
+
+      fetch('@Url.Content("~/")' + `WordTrends/GetWordHistory?word=${selectedWord}&hour=${hr}`)
+         .then(rsp => rsp.json()).then(data =>
+      {
+         let hours = JSON.parse(data);
+         trend = [];
+
+         for (let idx = 0; idx < hours.length; idx++)
+         {
+            let d = {};
+            d["hr"] = hours[idx].hr;
+            d["cnt"] = hours[idx].cnt;
+            trend.push(d);
+         }
+
+         paint();
+      });
+   }
+
+
+   var resizeTimeout = false;
+
+   window.addEventListener('resize', function ()
+   {
+      // debounce resize
+      this.clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(paint, 100);
+   });
+
+
+   window.addEventListener('orientationchange', function ()
+   {
+      paint();
+   });
+
+
+   window.onload = function ()
+   {
+      document.getElementById("hourSlider").value = @ViewBag.hourRange;
+      document.getElementById("hourOutput").value = @ViewBag.hourRange + " hours";
+      words = (@Html.Raw(ViewBag.initData));
+
+      let cvs = document.getElementById("cvs");
+      cvs.onmousemove = mouseMove;
+      cvs.onmouseenter = mouseEnter;
+      cvs.onmouseleave = mouseExit;
+      cvs.onmousedown = mouseDown;
+
+      barCanvas = new CCanvas(document, cvs);
+      paint();
+   }
+</script>
