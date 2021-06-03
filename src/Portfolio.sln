@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceTests", "ServiceTest
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RSSWebAPISvc", "RSSWebAPISvc\RSSWebAPISvc.csproj", "{35FEA84A-8F6D-4C5E-A87A-D13E8421434D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTestCoverage", "UnitTestCoverage\UnitTestCoverage.csproj", "{71903D5D-18E1-4D24-8AB7-1286277CFD0E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
