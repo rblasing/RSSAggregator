@@ -12,7 +12,7 @@ namespace UnitTestCoverage
       /// Ensure that every class in the assembly being tested has an
       /// associated test class, and that every method in the target class
       /// has an associated test method.  Classes and methods in the target
-      /// assembly decorated with the <c>xcludeFromCodeCoverage</c> attribute
+      /// assembly decorated with the <c>ExcludeFromCodeCoverage</c> attribute
       /// will be ignored.
       /// </summary>
       public static IReadOnlyList<string> VerifyCoverage(Assembly targetAssembly, Assembly testAssembly)
