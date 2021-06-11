@@ -8,7 +8,7 @@ This application provides consumers with a consolidated view of a set of RSS new
 | CSS  | Responsive web design | RSS | PowerShell | ASP.NET MVC | WCF 
 | WebAPI | SOAP | REST | Windows services | SVG | log4net
 | XML | XSLT | XPath | [WebSQL](https://www.w3.org/TR/webdatabase/) | [IndexedDB](https://www.w3.org/TR/IndexedDB-2/) | [Web storage](https://www.w3.org/TR/webstorage/) 
-| [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) | [OpenXML](https://docs.microsoft.com/en-us/office/open-xml/about-the-open-xml-sdk) | SQL/XML | AJAX | | |  
+| [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) | [OpenXML](https://docs.microsoft.com/en-us/office/open-xml/about-the-open-xml-sdk) | SQL/XML | AJAX | DHTML | |  
 
 <br /><br />
 <!-- A live demo is available at [zoot.azurewebsites.net/news](https://zoot.azurewebsites.net/news) -->
