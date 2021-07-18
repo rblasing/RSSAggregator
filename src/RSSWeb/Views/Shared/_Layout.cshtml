@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>@ViewBag.Title</title>
+   <base href='@Url.Content("~/")'>
+   <script language="javascript" type="text/javascript" src="~/Scripts/Common.js"></script>
+   <script language="javascript" type="text/javascript" src="~/Scripts/LocalDb.js"></script>
+
+   @Styles.Render("~/Content/css")
+</head>
+<body>
+   <div class='navLong'>
+      <ul class='nav'>
+         <li class='nav'><a href='~/'>Home</a></li>
+         <li class='nav'><a href='~/feed.rss'>XSLT</a></li>
+         <li class='nav'><a href='~/StateMap'>SVG</a></li>
+         <li class='nav'><a href='~/WordTrends'>Canvas</a></li>
+         <li class='nav'><a href='~/SQLSearch'>SQL</a></li>
+         <li class='nav'><a href='~/RSSFeed'>Settings</a></li>
+      </ul>
+   </div>
+
+   <div id="mobileMenu" class='navDrop' style="overflow: hidden; padding: 5px 0 5px 0">
+      <input type="checkbox" id="mobileMenuToggle" style="display: none"/>
+      <label for="mobileMenuToggle" style="padding: 5px">&#9776;</label>
+      <ul id="mobileMenuList" class='nav'>
+         <li class='navDrop'><a href='~/'>Home</a></li>
+         <li class='navDrop'><a href='~/feed.rss'>XSLT</a></li>
+         <li class='navDrop'><a href='~/StateMap'>SVG</a></li>
+         <li class='navDrop'><a href='~/WordTrends'>Canvas</a></li>
+         <li class='navDrop'><a href='~/SQLSearch'>SQL</a></li>
+         <li class='navDrop'><a href='~/RSSFeed'>Settings</a></li>
+      </ul>
+   </div>
+
+   @RenderBody()
+   @RenderSection("scripts", required: false)
+</body>
+</html>
