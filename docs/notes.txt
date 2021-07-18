@@ -33,6 +33,7 @@ Features
 
 Demonstrates:
    * C#
+   * ADO.NET
    * JavaScript
    * Regex
    * LINQ
@@ -93,6 +94,18 @@ CREATE TABLE state (
 CREATE TABLE ignore_word (
    word NVARCHAR(100) PRIMARY KEY
 );
+
+CREATE TABLE common_word (
+   word  NVARCHAR(100)  PRIMARY KEY
+);
+
+CREATE TABLE profanity (
+   word  NVARCHAR(30)  PRIMARY KEY
+);
+
+INSERT INTO profanity (word) VALUES ('damn');
+INSERT INTO profanity (word) VALUES ('damned');
+INSERT INTO profanity (word) VALUES ('ass');
 
 CREATE TABLE log4net (
    id         INT            IDENTITY (1, 1) NOT NULL,
