@@ -22,7 +22,7 @@ Features
   * is responsive to device screen size
   * allows user to set font size, saving preference in broweser's local storage
   * highlights items which contain user-defined keywords
-  * allows searching by keyword, and download of results as XSLT using OpenXML
+  * allows searching by keyword, and download of results as XLSX using OpenXML
 
   * logs system warnings and errors to server DB
   * has been validated with unit tests
