@@ -33,7 +33,7 @@ This application provides consumers with a consolidated view of a set of RSS new
 * Is responsive to device screen size
 * Allows user to set font size for main page independently of browser settings, saving preference in browser's local storage
 * Highlights items which contain user-defined keywords (which are also saved in local storage)
-* Allows searching by keyword, and downloading of results as XSLT using OpenXML
+* Allows searching by keyword, and downloading of results as XLSX using OpenXML
 * Demonstrates usage of the SQL *xml* data type by executing queries against columns defined as such
 * Logs system warnings and errors to file and application database using log4net
 * Exposes a WCF service which responds to both SOAP and JSON/HTTP requests
