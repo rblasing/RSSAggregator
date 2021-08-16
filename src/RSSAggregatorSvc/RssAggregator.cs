@@ -65,12 +65,6 @@ namespace RssAggregatorSvc
                if (RefreshFeed(feedIdx))
                   PublishTopItems();
 
-               _dbConn.Close();
-
-               // loop back around
-               if (++feedIdx >= _feeds.Length)
-                  feedIdx = 0;
-
                // run update of common_word table at midnight
                if (DateTime.Now.Hour == 0  &&  !commonUpdateExecuted)
                {
@@ -82,6 +76,12 @@ namespace RssAggregatorSvc
                // reset the executed flag at 1AM
                if (DateTime.Now.Hour == 1)
                   commonUpdateExecuted = false;
+
+               _dbConn.Close();
+
+               // loop back around
+               if (++feedIdx >= _feeds.Length)
+                  feedIdx = 0;
 
                System.Threading.Thread.Sleep(SleepSecs * 1000);
             }
