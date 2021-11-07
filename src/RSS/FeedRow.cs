@@ -28,6 +28,9 @@ namespace RSS
       /// </summary>
       public void Save(IDal dal)
       {
+         if (RssDoc.Channel.Items == null)
+            return;
+      
          foreach (Item item in RssDoc.Channel.Items)
          {
             if (!dal.ItemExists(item.Url))
