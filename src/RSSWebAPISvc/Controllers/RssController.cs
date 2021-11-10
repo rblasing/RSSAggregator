@@ -11,16 +11,35 @@ using RSS;
 
 namespace RSSWebAPISvc.Controllers
 {
-    public class RssController : ApiController
-    {
+   public class RssController : ApiController
+   {
       private readonly string _dbConnStr =
          ConfigurationManager.ConnectionStrings["dbConn"].ConnectionString;
+
+      private int throttleRate =
+         Convert.ToInt32(ConfigurationManager.AppSettings["throttleRate"]);
+
+      private int retrySec;
+      private string errorMsg;
 
 
       [HttpGet]
       [ActionName("item")]
       public ItemRow[] Get()
       {
+         string key = System.Web.HttpContext.Current?.Request?.UserHostAddress;
+
+         if (key != null  &&
+            Util.WSBase.ShouldThrottle(key, throttleRate, out retrySec, out errorMsg))
+         {
+            log4net.LogManager.GetLogger("RssController").Warn(errorMsg);
+ 
+            throw NewHttpResponseException(
+               "Throttling has been activated for this connection. Retry in " +
+               retrySec.ToString() + " seconds.",
+               HttpStatusCode.ServiceUnavailable);
+         }
+
          var countPair = Request.GetQueryNameValuePairs().Where(p => p.Key == "count");
          var keywordPair = Request.GetQueryNameValuePairs().Where(p => p.Key == "keyword");
          var fromDatePair = Request.GetQueryNameValuePairs().Where(p => p.Key == "fromDateTime");

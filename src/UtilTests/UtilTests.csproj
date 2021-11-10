@@ -69,6 +69,7 @@
     <Compile Include="JsTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StringExtensionsTest.cs" />
+    <Compile Include="WSBaseTest.cs" />
     <Compile Include="UtilCoverageTest.cs" />
   </ItemGroup>
   <ItemGroup>

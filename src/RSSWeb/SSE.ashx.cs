@@ -204,7 +204,7 @@ namespace RSSWeb
                // so define a subset object
                dynamic d = new
                {
-                  title = item.Title.ReplaceNewlinesWithBreaks(),
+                  title = string.IsNullOrWhiteSpace(item.Title)  ? "Untitled" : item.Title.ReplaceNewlinesWithBreaks(),
                   url = item.Url,
                   feedName = item.FeedName,
                   pubDate = item.PubDate.ToString("o"),

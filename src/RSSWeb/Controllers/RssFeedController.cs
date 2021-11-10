@@ -12,7 +12,7 @@ using Util;
 namespace RSSWeb.Controllers
 {
    // super simple password protection of site settings pages
-   [BasicAuthenticationAttribute("admin", "8675309", BasicRealm = "RSSWeb")]
+   [BasicAuthenticationAttribute(BasicRealm = "RSSWeb")]
    public class RssFeedController : ControllerBase
    {
       public ActionResult Index()

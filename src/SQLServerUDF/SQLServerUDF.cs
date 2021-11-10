@@ -217,19 +217,19 @@ namespace SQLServerUDF
          string[] words = Split(s);
 
          for (int idx = 0; idx < words.Length; idx++)
-            words[idx] = TrimPunctuation(words[idx]);
+            words[idx] = TrimPunctuation(words[idx]).ToLower();
 
          if (excludeArticles)
-            words = words.Where(w => !Articles.Contains(w.ToLower())).ToArray();
+            words = words.Where(w => !Articles.Contains(w)).ToArray();
 
          if (excludeConjunctions)
-            words = words.Where(w => !Conjunctions.Contains(w.ToLower())).ToArray();
+            words = words.Where(w => !Conjunctions.Contains(w)).ToArray();
 
          if (excludePrepositions)
-            words = words.Where(w => !Prepositions.Contains(w.ToLower())).ToArray();
+            words = words.Where(w => !Prepositions.Contains(w)).ToArray();
 
          if (excludePronouns)
-            words = words.Where(w => !Pronouns.Contains(w.ToLower())).ToArray();
+            words = words.Where(w => !Pronouns.Contains(w)).ToArray();
 
          // remove one-letter words and numbers
          words = words.Where(w => w.Length > 1  &&  !double.TryParse(w, out double i)).ToArray();
@@ -288,10 +288,29 @@ namespace SQLServerUDF
 
          string[] words = Split(s);
 
-         return words.Where(w => profanity.Contains(TrimPunctuation(w).ToLower())).Count() > 0;
+         // this looks really elegant, but it's much slower than brute iteration
+         //return words.Where(w => profanity.Contains(TrimPunctuation(w).ToLower())).Count() > 0;
+
+         for (int idx = 0; idx < words.Length; idx++)
+            words[idx] = TrimPunctuation(words[idx]).ToLower();
+
+         foreach (string w in words)
+         {
+            foreach (string p in profanity)
+            {
+               if (w == p)
+                  return true;
+            }
+         }
+
+         return false;
       }
 
 
+      /// <summary>
+      /// Returns d--m instead of damn, h--l instead of hell, etc.
+      /// </summary>
+      /// <returns></returns>
       public static string Bleep(IReadOnlyList<string> profanity, string s)
       {
          if (string.IsNullOrWhiteSpace(s))
@@ -304,16 +323,16 @@ namespace SQLServerUDF
 
          for (int i = 0; i < words.Length; i++)
          {
-            string trimmed = TrimPunctuation(words[i]);
+            string trimmedWord = TrimPunctuation(words[i]).ToLower();
 
             foreach (var p in profanity)
             {
-               if (trimmed.ToLower() == p)
+               if (trimmedWord == p)
                {
                   char[] arr = words[i].ToCharArray();
                   int pStart = words[i].IndexOf(p, StringComparison.InvariantCultureIgnoreCase);
 
-                  // blank out interior of profanity
+                  // blank out interior of profane word
                   for (int cIdx = 0; cIdx < p.Length - 2; cIdx++)
                      arr[cIdx + pStart + 1] = '-';
 

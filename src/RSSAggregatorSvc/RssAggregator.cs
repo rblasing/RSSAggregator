@@ -28,7 +28,7 @@ namespace RssAggregatorSvc
       private static readonly log4net.ILog Logger = log4net.LogManager.GetLogger("RSSAggregator");
 
       private static SqlConnection _dbConn;
-      private static Dal _dal;
+      private static DalQuery _dal;
       private static FeedRow[] _feeds;
 
 
@@ -47,7 +47,7 @@ namespace RssAggregatorSvc
                if (_dbConn == null)
                {
                   _dbConn = new SqlConnection(ConnStr);
-                  _dal = new Dal(_dbConn);
+                  _dal = new DalQuery(_dbConn);
                }
 
                if (_dbConn.State != System.Data.ConnectionState.Open)
@@ -68,7 +68,7 @@ namespace RssAggregatorSvc
                // run update of common_word table at midnight
                if (DateTime.Now.Hour == 0  &&  !commonUpdateExecuted)
                {
-                  ((DalQuery)_dal).UpdateCommonWords();
+                  _dal.UpdateCommonWords();
                   commonUpdateExecuted = true;
                }
 

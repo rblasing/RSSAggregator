@@ -22,12 +22,30 @@ namespace RSSWCFSvc
          ConfigurationManager.ConnectionStrings["dbConn"].ConnectionString;
 
       private static readonly log4net.ILog Logger = log4net.LogManager.GetLogger("RSSService");
+      private int throttleRate = Convert.ToInt32(ConfigurationManager.AppSettings["throttleRate"]);
+      private int retrySec;
+      private string errorMsg;
 
 
       public getItemsResponse getItemsByKeyword(getItemsByKeywordRequest request)
       {
          SqlConnection dbConn = null;
          getItemsResponse rsp = new getItemsResponse() { Body = new getItemsResponseBody() };
+
+         string key = System.Web.HttpContext.Current?.Request?.UserHostAddress;
+
+         if (key != null  &&
+            Util.WSBase.ShouldThrottle(key, throttleRate, out retrySec, out errorMsg))
+         {
+            Logger?.Warn(errorMsg);
+
+            rsp.Body.error = new WSError(WSErrorType.Unavailable, true,
+               retrySec.ToString(),
+               "Throttling has been activated for this connection. Retry in " +
+               retrySec.ToString() + " seconds.");
+               
+            return rsp;
+         }
 
          if (string.IsNullOrWhiteSpace(request.Body.keyword))
          {
@@ -76,6 +94,21 @@ namespace RSSWCFSvc
       {
          SqlConnection dbConn = null;
          getItemsResponse rsp = new getItemsResponse() { Body = new getItemsResponseBody() };
+
+         string key = System.Web.HttpContext.Current?.Request?.UserHostAddress;
+
+         if (key != null  &&
+            Util.WSBase.ShouldThrottle(key, throttleRate, out retrySec, out errorMsg))
+         {
+            Logger?.Warn(errorMsg);
+
+            rsp.Body.error = new WSError(WSErrorType.Unavailable, true,
+               retrySec.ToString(),
+               "Throttling has been activated for this connection. Retry in " +
+               retrySec.ToString() + " seconds.");
+
+            return rsp;
+         }
 
          if (request.Body.minDateTime.Kind != DateTimeKind.Utc)
          {
@@ -143,6 +176,21 @@ namespace RSSWCFSvc
       {
          SqlConnection dbConn = null;
          getItemsResponse rsp = new getItemsResponse() { Body = new getItemsResponseBody() };
+
+         string key = System.Web.HttpContext.Current?.Request?.UserHostAddress;
+
+         if (key != null  &&
+            Util.WSBase.ShouldThrottle(key, throttleRate, out retrySec, out errorMsg))
+         {
+            Logger?.Warn(errorMsg);
+
+            rsp.Body.error = new WSError(WSErrorType.Unavailable, true,
+               retrySec.ToString(),
+               "Throttling has been activated for this connection. Retry in " +
+               retrySec.ToString() + " seconds.");
+
+            return rsp;
+         }
 
          if (request.Body.itemCount <= 0)
          {
