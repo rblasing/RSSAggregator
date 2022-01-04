@@ -10,10 +10,6 @@ namespace RSS
    public class Dal : IDal
    {
       protected readonly DbConnection _dbConn;
-
-      protected readonly string ColumnList =
-         "i.feed_id, f.title, i.ins_date, i.pub_date, i.title, i.description, i.url, i.xml";
-
       private static List<string> _stateNames;
 
 
@@ -21,7 +17,7 @@ namespace RSS
       {
          _dbConn = inConn;
 
-         // load once on app/site initialization
+         // this is static data, so only load once on app/site initialization
          if (_stateNames == null)
          {
             DbCommand cmd = null;
@@ -223,7 +219,7 @@ namespace RSS
 
             cmd.CommandText =
                "INSERT INTO rss_item (feed_id, ins_date, pub_date, title, description, url, xml) VALUES " +
-               "(@feedid, @insDate, @pubdate, @title, @desc, @url, @xml)";
+               "(@feedid, @insdate, @pubdate, @title, @desc, @url, @xml)";
 
             cmd.Parameters.Add(CreateParameter(cmd, "@feedid", DbType.Int32, feedId));
             cmd.Parameters.Add(CreateParameter(cmd, "@insdate", DbType.DateTime2, insDate));
@@ -293,11 +289,9 @@ namespace RSS
          {
             cmd = _dbConn.CreateCommand();
 
-            cmd.CommandText = "SELECT TOP (@count) " + ColumnList +
-               " FROM rss_item i, rss_feed f WHERE i.feed_id = f.feed_id ORDER BY i.ins_date DESC";
+            cmd.CommandText = "SELECT TOP (@count) * FROM v_rss_item ORDER BY ins_date DESC";
 
             cmd.Parameters.Add(CreateParameter(cmd, "@count", DbType.Int32, itemCount));
-
             cmd.CommandTimeout = 100000;
             dr = cmd.ExecuteReader(CommandBehavior.SingleResult);
 
@@ -308,7 +302,9 @@ namespace RSS
                return null;
             else
             {
-               // sort by pubDate
+               // sort by pubDate, since the ins_date column only indicates when
+               // the item was received from a feed, not when the publisher
+               // released it to virtual print
                var sorted = from i in items orderby i.PubDate descending select i;
 
                return sorted.ToArray();
@@ -344,8 +340,7 @@ namespace RSS
          {
             cmd = _dbConn.CreateCommand();
 
-            cmd.CommandText = "SELECT TOP (@count) " + ColumnList +
-               " FROM rss_item i, rss_feed f WHERE i.feed_id = f.feed_id AND i.ins_date > @insDate ORDER BY i.ins_date ASC";
+            cmd.CommandText = "SELECT TOP (@count) * FROM v_rss_item WHERE ins_date > @insDate ORDER BY ins_date ASC";
 
             cmd.Parameters.Add(CreateParameter(cmd, "@count", DbType.Int32, maxItems));
             cmd.Parameters.Add(CreateParameter(cmd, "insDate", DbType.DateTime2, sinceDate));
@@ -358,7 +353,7 @@ namespace RSS
                return null;
             else
             {
-               // sort by pubDate
+               // sort by pubDate (see note in GetTopItems)
                var sorted = from i in items orderby i.PubDate select i;
 
                return sorted.ToArray();
@@ -399,7 +394,7 @@ namespace RSS
 
 
       /// <summary>
-      /// Determine whether a URL already exists in the rss_item table.
+      /// Determine whether an item with the specified URL already exists.
       /// </summary>
       /// <returns>True if it exists, false otherwise.</returns>
       public bool ItemExists(string url)
@@ -422,9 +417,8 @@ namespace RSS
 
 
       /// <summary>
-      /// Successful usage of this method depends on the SQL being executed using
-      /// the column list ordering contained in the class-level <c>columnList</c>
-      /// attribute.
+      /// The reader passed to this method should contain a result set from 
+      /// the v_rss_item view.
       /// </summary>
       protected static IReadOnlyList<ItemRow> ReadToItemList(DbDataReader dr)
       {
@@ -432,19 +426,27 @@ namespace RSS
             return null;
 
          List<ItemRow> items = new List<ItemRow>();
+         int feedId = dr.GetOrdinal("feed_id");
+         int insDate = dr.GetOrdinal("ins_date");
+         int pubDate = dr.GetOrdinal("pub_date");
+         int title = dr.GetOrdinal("item_title");
+         int description = dr.GetOrdinal("description");
+         int url = dr.GetOrdinal("url");
+         int xml = dr.GetOrdinal("xml");
+         int feedTitle = dr.GetOrdinal("feed_title");
 
          while (dr.Read())
          {
             ItemRow item = new ItemRow()
             {
-               FeedId = dr.GetInt32(0),
-               FeedName = dr.GetString(1),
-               InsDate = DateTime.SpecifyKind(dr.GetDateTime(2), DateTimeKind.Utc),
-               PubDate = DateTime.SpecifyKind(dr.GetDateTime(3), DateTimeKind.Utc),
-               Title = dr.GetString(4),
-               Description = !dr.IsDBNull(5) ? dr.GetString(5) : null,
-               Url = dr.GetString(6),
-               ItemXml = dr.GetString(7)
+               FeedId = dr.GetInt32(feedId),
+               InsDate = DateTime.SpecifyKind(dr.GetDateTime(insDate), DateTimeKind.Utc),
+               PubDate = DateTime.SpecifyKind(dr.GetDateTime(pubDate), DateTimeKind.Utc),
+               Title = dr.GetString(title),
+               Description = !dr.IsDBNull(description) ? dr.GetString(5) : null,
+               Url = dr.GetString(url),
+               ItemXml = dr.GetString(xml),
+               FeedName = dr.GetString(feedTitle)
             };
             
             items.Add(item);
@@ -469,6 +471,9 @@ namespace RSS
       }
 
 
+      /// <summary>
+      /// Dispose of database resources.
+      /// </summary>
       public static void Cleanup(DbCommand cmd, DbDataReader dr)
       {
          dr?.Close();

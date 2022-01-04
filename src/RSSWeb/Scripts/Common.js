@@ -58,6 +58,21 @@ function isLeapYear(y)
 }
 
 
+function shortDate(d)
+{
+   let amPm = "AM";
+   let hour = d.getHours();
+
+   if (hour > 12)
+   {
+      hour -= 12;
+      amPm = "PM";
+   }
+
+   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}  ${hour}:${String(d.getMinutes()).padStart(2, '0')} ${amPm}`;
+}
+
+
 function timeSpan(d)
 {
    let span = {};

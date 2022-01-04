@@ -124,6 +124,7 @@ namespace RSSWeb.Controllers
 
          try
          {
+            // create an in-memory spreadsheet
             string[] columnNames = new string[dt.Columns.Count];
 
             for (int idx = 0; idx < columnNames.Length; idx++)
@@ -132,6 +133,7 @@ namespace RSSWeb.Controllers
             ms = new MemoryStream();
             OpenWorkbook.WriteOpenXmlWorkbook("", ms, dt.CreateDataReader(), columnNames);
 
+            // send it to the client
             Response.Clear();
 
             Response.ContentType =

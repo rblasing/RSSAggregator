@@ -65,7 +65,7 @@ namespace RssAggregatorSvc
                if (RefreshFeed(feedIdx))
                   PublishTopItems();
 
-               // run update of common_word table at midnight
+               // update the content of the common_word table at midnight
                if (DateTime.Now.Hour == 0  &&  !commonUpdateExecuted)
                {
                   _dal.UpdateCommonWords();
@@ -133,7 +133,7 @@ namespace RssAggregatorSvc
                      }
 
                      if (!e.Message.StartsWith("Possible ad"))
-                        Logger?.Warn($"{e.Message} : {e.ElementName} : {val}");
+                        Logger?.Warn($"{_feeds[feedIdx].Title} : {e.Message} : {e.ElementName} : {val}");
                   }
                }
             }

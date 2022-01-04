@@ -52,10 +52,19 @@ namespace SQLServerUDFTests
 
 
       [TestMethod()]
-      public void BleepTest()
+      [DataRow("This is a 'damn' test",         "This is a 'd--n' test")]
+      [DataRow("damn! This is a test",          "d--n! This is a test")]
+      [DataRow("Damn! This is a test",          "D--n! This is a test")]
+      [DataRow("Damn! This is a damnable test", "D--n! This is a damnable test")]
+      [DataRow("My dear, I don't give a damn.", "My dear, I don't give a d--n.")]
+      public void BleepTest(string dirty, string clean)
       {
          string[] profanities = { "damn" };
-         string s = SQLServerUDF.SQLServerUDF.Bleep(profanities, "This is a 'damn' test");
+
+         string s = SQLServerUDF.SQLServerUDF.Bleep(profanities, dirty);
+         Assert.AreEqual(clean, s);
+
+         /*string s = SQLServerUDF.SQLServerUDF.Bleep(profanities, "This is a 'damn' test");
          Assert.AreEqual("This is a 'd--n' test", s);
 
          s = SQLServerUDF.SQLServerUDF.Bleep(profanities, "damn! This is a test");
@@ -68,12 +77,12 @@ namespace SQLServerUDFTests
          Assert.AreEqual("D--n! This is a damnable test", s);
 
          s = SQLServerUDF.SQLServerUDF.Bleep(profanities, "My dear, I don't give a damn.");
-         Assert.AreEqual("My dear, I don't give a d--n.", s);
+         Assert.AreEqual("My dear, I don't give a d--n.", s);*/
       }
 
 
       [TestMethod()]
-      public void NeedsBleepingTest()
+      public void NeedsBleepingTest(string dirty)
       {
          string[] profanities = { "damn" };
          Assert.IsTrue(SQLServerUDF.SQLServerUDF.NeedsBleeping(profanities, "This is a 'damn' test"));

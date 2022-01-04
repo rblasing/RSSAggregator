@@ -3,6 +3,9 @@
 
 namespace RSS
 {
+   /// <summary>
+   /// A representation of a row in the rss_feed database table.
+   /// </summary>
    public class FeedRow : Feed
    {
       // database columns
@@ -24,13 +27,13 @@ namespace RSS
 
 
       /// <summary>
-      /// Save any new feed items to database.
+      /// Save any new feed items to the database.
       /// </summary>
       public void Save(IDal dal)
       {
          if (RssDoc.Channel.Items == null)
             return;
-      
+
          foreach (Item item in RssDoc.Channel.Items)
          {
             if (!dal.ItemExists(item.Url))

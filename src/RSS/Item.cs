@@ -29,6 +29,8 @@ namespace RSS
       {
          ItemXml = n.OuterXml;
          Title = SelectString(n, "title", true);
+
+         // we don't want to persist advertisement links in the DB
          Description = RemoveAds(SelectString(n, "description", false));
 
          // don't persist invalidly-formed HTML fragments

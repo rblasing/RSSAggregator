@@ -4,6 +4,7 @@ using System.Web;
 
 namespace RSSWCFSvc
 {
+   [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
    public class Global : HttpApplication
    {
       protected void Application_BeginRequest(object sender, EventArgs e)
@@ -12,9 +13,10 @@ namespace RSSWCFSvc
 
          try
          {
-            // add a trace filter to the output stream so it can be logged
             app = sender as HttpApplication;
 
+            // add a trace filter to the output stream so it can be logged in
+            // Application_EndRequest
             app.Response.Filter = new Util.FilterStream(app.Response.Filter);
 
             // log the input request
@@ -24,7 +26,7 @@ namespace RSSWCFSvc
             String s = System.Text.Encoding.UTF8.GetString(bytes);
 
             if (!string.IsNullOrWhiteSpace(s))
-               log4net.LogManager.GetLogger("GlobalRequest").Debug(s);
+               log4net.LogManager.GetLogger("RSSWCFSvc").Debug(s);
          }
          catch (Exception ex)
          {
@@ -32,8 +34,8 @@ namespace RSSWCFSvc
             // crash the service
             try
             {
-               log4net.LogManager.GetLogger("GlobalRequestException").Debug(ex.Message);
-               log4net.LogManager.GetLogger("GlobalRequestException").Debug(ex.StackTrace);
+               log4net.LogManager.GetLogger("RSSWCFSvc").Debug(ex.Message);
+               log4net.LogManager.GetLogger("RSSWCFSvc").Debug(ex.StackTrace);
             }
             catch
             {
@@ -56,14 +58,14 @@ namespace RSSWCFSvc
             string s = ((Util.FilterStream)app.Response.Filter).ReadStream();
 
             if (!string.IsNullOrWhiteSpace(s))
-               log4net.LogManager.GetLogger("GlobalResponse").Debug(s);
+               log4net.LogManager.GetLogger("RSSWCFSvc").Debug(s);
          }
          catch (Exception ex)
          {
             try
             {
-               log4net.LogManager.GetLogger("GlobalResponseException").Debug(ex.Message);
-               log4net.LogManager.GetLogger("GlobalResponseException").Debug(ex.StackTrace);
+               log4net.LogManager.GetLogger("RSSWCFSvc").Debug(ex.Message);
+               log4net.LogManager.GetLogger("RSSWCFSvc").Debug(ex.StackTrace);
             }
             catch
             {

@@ -288,9 +288,7 @@ namespace RSSTests
       public void ReadToItemListTest()
       {
          InitDb();
-         SqlCommand cmd = new SqlCommand(
-            "SELECT i.feed_id, f.title, i.ins_date, i.pub_date, i.title, i.description, i.url, i.xml FROM rss_item i, rss_feed f WHERE i.feed_id = f.feed_id",
-            _dbConn);
+         SqlCommand cmd = new SqlCommand("SELECT * FROM v_rss_item", _dbConn);
 
          SqlDataReader dr = cmd.ExecuteReader(CommandBehavior.SingleResult);
 

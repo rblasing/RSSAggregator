@@ -25,6 +25,7 @@ namespace RSSWebAPISvc.Controllers
 
       [HttpGet]
       [ActionName("item")]
+      [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
       public ItemRow[] Get()
       {
          string key = System.Web.HttpContext.Current?.Request?.UserHostAddress;
@@ -241,7 +242,7 @@ namespace RSSWebAPISvc.Controllers
       {
          HttpResponseMessage msg = new HttpResponseMessage(code)
          {
-            ReasonPhrase = reason.Replace("\n", " ").Replace("\r", "")
+            ReasonPhrase = reason.Replace("\n", " ").Replace("\r", " ")
          };
 
          return new HttpResponseException(msg);

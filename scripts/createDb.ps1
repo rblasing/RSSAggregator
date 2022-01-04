@@ -7,6 +7,10 @@ $db.Open()
 
 $cmd = new-object System.Data.SqlClient.SqlCommand
 
+$cmd.Connection = $db
+$cmd.CommandText = "DROP VIEW v_rss_item"
+$cmd.ExecuteNonQuery()
+
 # drop existing tables
 $cmd.Connection = $db
 $cmd.CommandText = "DROP TABLE rss_item"
@@ -18,6 +22,10 @@ $cmd.ExecuteNonQuery()
 
 $cmd.Connection = $db
 $cmd.CommandText = "DROP TABLE state"
+$cmd.ExecuteNonQuery()
+
+$cmd.Connection = $db
+$cmd.CommandText = "DROP TABLE common_word"
 $cmd.ExecuteNonQuery()
 
 $cmd.Connection = $db
@@ -37,11 +45,27 @@ $cmd.CommandText = "CREATE TABLE rss_feed (feed_id INT PRIMARY KEY IDENTITY(1, 1
 $cmd.Connection = $db
 $cmd.ExecuteNonQuery()
 
-$cmd.CommandText = "CREATE TABLE rss_item (feed_id INT FOREIGN KEY REFERENCES rss_feed(feed_id), ins_date DATETIME2 NOT NULL DEFAULT (GETUTCDATE()), pub_date DATETIME2 NOT NULL, title NVARCHAR(MAX) NOT NULL, description NVARCHAR(MAX), url NVARCHAR(400) NOT NULL, xml XML, CONSTRAINT PK_rss_item PRIMARY KEY (url))"
+$cmd.CommandText = "CREATE TABLE rss_item (item_id INT PRIMARY KEY IDENTITY(1, 1), feed_id INT FOREIGN KEY REFERENCES rss_feed(feed_id), ins_date DATETIME2 NOT NULL DEFAULT (GETUTCDATE()), pub_date DATETIME2 NOT NULL, title NVARCHAR(450) NOT NULL, description NVARCHAR(MAX), url NVARCHAR(400)  UNIQUE, xml XML)"
 $cmd.Connection = $db
 $cmd.ExecuteNonQuery()
 
 $cmd.CommandText = "CREATE INDEX idx_item_ins_date ON rss_item(ins_date)"
+$cmd.Connection = $db
+$cmd.ExecuteNonQuery()
+
+$cmd.CommandText = "CREATE SELECTIVE XML INDEX sidx_rss_item ON rss_item(xml) FOR (pubDatePath = '/item/pubDate')"
+$cmd.Connection = $db
+$cmd.ExecuteNonQuery()
+
+$cmd.CommandText = "ALTER INDEX sidx_rss_item ON rss_item FOR (ADD enclosurePath = '/item/enclosure')"
+$cmd.Connection = $db
+$cmd.ExecuteNonQuery()
+
+$cmd.CommandText = "ALTER INDEX sidx_rss_item ON rss_item FOR (ADD descPath = '/item/description')"
+$cmd.Connection = $db
+$cmd.ExecuteNonQuery()
+
+$cmd.CommandText = "CREATE VIEW v_rss_item AS SELECT i.item_id [item_id], i.feed_id [feed_id], i.ins_date [ins_date], i.pub_date [pub_date], i.title [item_title], i.description [description], i.url [url], i.xml [xml], f.title [feed_title] FROM rss_item i, rss_feed f WHERE i.feed_id = f.feed_id"
 $cmd.Connection = $db
 $cmd.ExecuteNonQuery()
 
@@ -50,6 +74,10 @@ $cmd.Connection = $db
 $cmd.ExecuteNonQuery()
 
 $cmd.CommandText = "CREATE TABLE ignore_word (word NVARCHAR(100) PRIMARY KEY)"
+$cmd.Connection = $db
+$cmd.ExecuteNonQuery()
+
+$cmd.CommandText = "CREATE TABLE common_word (word NVARCHAR(100) PRIMARY KEY)"
 $cmd.Connection = $db
 $cmd.ExecuteNonQuery()
 
@@ -296,54 +324,44 @@ $profanity | foreach {
    $cmd.ExecuteNonQuery();
 }
 
+$cmd = new-object System.Data.SqlClient.SqlCommand
+
 
 $cmd.Connection = $db
-$cmd.CommandText = "CREATE PROCEDURE SelectMIMETypes
-AS
-BEGIN
-SET NOCOUNT ON;
-SET QUOTED_IDENTIFIER ON;
-WITH t AS 
-(SELECT xml.value('data(/item[1]/enclosure[1]/@type)', 'nvarchar(50)') AS type FROM rss_item WHERE xml.exist('/item/enclosure') = 1) 
-SELECT t.type [Media Type], COUNT(*) [Count] FROM t GROUP BY t.type;
-END"
-$cmd.CommandType = [System.Data.CommandType]::Text
+$cmd.CommandText = "DROP PROCEDURE SelectMIMETypes"
 $cmd.ExecuteNonQuery()
 
 $cmd.Connection = $db
-$cmd.CommandText = "CREATE PROCEDURE SelectDailyDistribution
-AS
-BEGIN
-SET NOCOUNT ON;
-SET QUOTED_IDENTIFIER ON;
-WITH t AS (SELECT xml.value('upper-case(substring(string((/item/pubDate)[1]), 1, 3))', 'nchar(3)') AS d FROM rss_item WHERE xml.exist('/item/pubDate') = 1) 
-SELECT t.d [Day], COUNT(*) [Count] FROM t GROUP BY t.d ORDER BY COUNT(*) DESC;
-END"
-$cmd.CommandType = [System.Data.CommandType]::Text
+$cmd.CommandText = "DROP PROCEDURE SelectDailyDistribution"
 $cmd.ExecuteNonQuery()
 
 $cmd.Connection = $db
-$cmd.CommandText = "CREATE PROCEDURE SelectNPRAuthors
-AS
-BEGIN
-SET NOCOUNT ON;
-SET QUOTED_IDENTIFIER ON;
-SELECT DISTINCT CAST(xml.query('declare namespace dc=""http://purl.org/dc/elements/1.1/""; /item/dc:creator/text()') AS NVARCHAR(400)) [Creator] FROM rss_item WHERE 
-   xml.exist('declare namespace dc=""http://purl.org/dc/elements/1.1/""; /item/dc:creator') = 1 AND 
-   feed_id = (SELECT feed_id FROM rss_feed WHERE title = 'NPR All Things Considered') ORDER BY [Creator];
-END"
-$cmd.CommandType = [System.Data.CommandType]::Text
+$cmd.CommandText = "DROP PROCEDURE SelectNPRAuthors"
 $cmd.ExecuteNonQuery()
 
 $cmd.Connection = $db
-$cmd.CommandText = "CREATE PROCEDURE SelectNASAArticles
-AS
-BEGIN
-SET NOCOUNT ON;
-SET QUOTED_IDENTIFIER ON;
-SELECT title [Title] FROM rss_item WHERE xml.exist('/item/description/text()[contains(lower-case(.), ""nasa"")]') = 1;
-END"
-$cmd.CommandType = [System.Data.CommandType]::Text
+$cmd.CommandText = "DROP PROCEDURE SelectNASAArticles"
+$cmd.ExecuteNonQuery()
+
+
+$cmd.Connection = $db
+$cmd.CommandText = "CREATE PROCEDURE [SelectMIMETypes] AS BEGIN SET NOCOUNT ON; SET QUOTED_IDENTIFIER ON; WITH t AS (SELECT xml.value('data(/item[1]/enclosure[1]/@type)', 'nvarchar(50)') AS type FROM rss_item WHERE xml.exist('/item/enclosure') = 1) SELECT t.type [Media Type], COUNT(*) [Count] FROM t GROUP BY t.type END"
+#$cmd.CommandType = [System.Data.CommandType]::Text
+$cmd.ExecuteNonQuery()
+
+$cmd.Connection = $db
+$cmd.CommandText = "CREATE PROCEDURE [SelectDailyDistribution] AS BEGIN SET NOCOUNT ON; SET QUOTED_IDENTIFIER ON; WITH t AS (SELECT xml.value('upper-case(substring(string((/item/pubDate)[1]), 1, 3))', 'nchar(3)') AS d FROM rss_item WHERE xml.exist('/item/pubDate') = 1) SELECT t.d [Day], COUNT(*) [Count] FROM t GROUP BY t.d ORDER BY COUNT(*) DESC END"
+#$cmd.CommandType = [System.Data.CommandType]::Text
+$cmd.ExecuteNonQuery()
+
+$cmd.Connection = $db
+$cmd.CommandText = "CREATE PROCEDURE [SelectNPRAuthors] AS BEGIN SET NOCOUNT ON; SET QUOTED_IDENTIFIER ON; SELECT DISTINCT CAST(xml.query('declare namespace dc=""http://purl.org/dc/elements/1.1/""; /item/dc:creator/text()') AS NVARCHAR(400)) [Creator] FROM rss_item WHERE xml.exist('declare namespace dc=""http://purl.org/dc/elements/1.1/""; /item/dc:creator') = 1 AND feed_id = (SELECT feed_id FROM rss_feed WHERE title = 'NPR All Things Considered') ORDER BY [Creator] END"
+#$cmd.CommandType = [System.Data.CommandType]::Text
+$cmd.ExecuteNonQuery()
+
+$cmd.Connection = $db
+$cmd.CommandText = "CREATE PROCEDURE [SelectNASAArticles] AS BEGIN SET NOCOUNT ON; SET QUOTED_IDENTIFIER ON; SELECT title [Title] FROM rss_item WHERE xml.exist('/item/description/text()[contains(lower-case(.), ""nasa"")]') = 1 END"
+#$cmd.CommandType = [System.Data.CommandType]::Text
 $cmd.ExecuteNonQuery()
 
 

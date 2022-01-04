@@ -136,6 +136,7 @@
     </Compile>
     <Compile Include="Controllers\ControllerBase.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\LogController.cs" />
     <Compile Include="Controllers\SqlSearchController.cs" />
     <Compile Include="Controllers\StateMapController.cs" />
     <Compile Include="Controllers\WordTrendsController.cs" />
@@ -143,11 +144,13 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Controllers\RssFeedController.cs" />
+    <Compile Include="Models\LogModel.cs" />
     <Compile Include="Models\RssFeedModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SSE.ashx.cs">
       <DependentUpon>SSE.ashx</DependentUpon>
     </Compile>
+    <Compile Include="TablePager.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="favicon.ico" />
@@ -184,6 +187,7 @@
     <Content Include="Views\SQLSearch\Index.cshtml" />
     <Content Include="Views\StateMap\Index.cshtml" />
     <Content Include="Views\WordTrends\Index.cshtml" />
+    <Content Include="Views\Log\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

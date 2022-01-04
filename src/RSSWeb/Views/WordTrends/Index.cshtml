@@ -35,7 +35,8 @@
    let selectedWord = null;
    let trend;
 
-   let emptyTrend = [{ hr: "01", cnt: 0 }, { hr: "02", cnt: 0 }, { hr: "03", cnt: 0 },
+   let emptyTrend =
+     [{ hr: "01", cnt: 0 }, { hr: "02", cnt: 0 }, { hr: "03", cnt: 0 },
       { hr: "04", cnt: 0 }, { hr: "05", cnt: 0 }, { hr: "06", cnt: 0 },
       { hr: "07", cnt: 0 }, { hr: "08", cnt: 0 }, { hr: "09", cnt: 0 },
       { hr: "10", cnt: 0 }, { hr: "11", cnt: 0 }, { hr: "12", cnt: 0 },
@@ -74,6 +75,7 @@
 
       for (let x = 0; x < words.length; x++)
       {
+         // user clicked on a graph bar, so get usage history for that word and display
          if (e.offsetY >= words[x].top  &&  e.offsetY <= words[x].top + barHeight)
          {
             trend = emptyTrend;
@@ -131,7 +133,7 @@
 
       barCanvas.clear("#FFFFFF");
 
-      // words[0].cnt should be the most popular word
+      // words[0] should be the most popular word
       let wordStep = (barCanvas.canvas.width - 10) / words[0].cnt;
 
       let leaveGap = false;
@@ -144,7 +146,7 @@
          let barWidth = (wordStep * words[x].cnt) * (animationPercent / 100);
          let barTop = x * (barHeight + 5);
 
-         // leave space for the history graph
+         // leave space for the history graph, if needed
          if (leaveGap)
             barTop += graphHeight;
 
@@ -164,7 +166,7 @@
          barCanvas.context.font = "bold 14px Arial";
          barCanvas.drawText(words[x].word, left + 5, barTop + barHeight, barHeight);
 
-         // draw count
+         // draw count at right tip of bar
          barCanvas.context.font = "italic 14px Arial";
 
          barCanvas.drawText(words[x].cnt,

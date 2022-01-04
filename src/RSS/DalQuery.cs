@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 
 namespace RSS
@@ -31,9 +29,9 @@ namespace RSS
             cmd = _dbConn.CreateCommand();
 
             // use case-insensitive collation for LIKE
-            cmd.CommandText = "SELECT " + ColumnList +
-               " FROM rss_item i, rss_feed f WHERE i.feed_id = f.feed_id AND EXISTS " +
-               "(SELECT value FROM STRING_SPLIT(@keywords, ' ') WHERE TRIM(value) != '' AND i.title COLLATE sql_latin1_general_cp1_ci_as LIKE '%' + value + '%')";
+            cmd.CommandText = "SELECT * FROM v_rss_item WHERE EXISTS " +
+               "(SELECT value FROM STRING_SPLIT(@keywords, ' ') WHERE " +
+               "TRIM(value) != '' AND item_title COLLATE sql_latin1_general_cp1_ci_as LIKE '%' + value + '%')";
 
             cmd.Parameters.Add(CreateParameter(cmd, "@keywords", DbType.String, keywords.ToLower()));
             dr = cmd.ExecuteReader(CommandBehavior.SingleResult);
@@ -72,8 +70,7 @@ namespace RSS
          {
             cmd = _dbConn.CreateCommand();
 
-            cmd.CommandText = "SELECT " + ColumnList +
-               " FROM rss_item i, rss_feed f WHERE i.feed_id = f.feed_id AND i.pub_date >= @lowDate AND i.pub_date <= @highDate ORDER BY i.ins_date";
+            cmd.CommandText = "SELECT * FROM v_rss_item WHERE pub_date >= @lowDate AND pub_date <= @highDate ORDER BY ins_date";
 
             cmd.Parameters.Add(CreateParameter(cmd, "@lowDate", DbType.DateTime2, lowDate));
             cmd.Parameters.Add(CreateParameter(cmd, "@highDate", DbType.DateTime2, highDate));
@@ -97,13 +94,13 @@ namespace RSS
       /// Retrieve a list of items whose title or desciption contains the
       /// given state's full name.
       /// </summary>
-      public IReadOnlyList<ItemRow> GetItemsByState(string abbr, int count)
+      public IReadOnlyList<ItemRow> GetItemsByState(string stateAbbr, int count)
       {
          DbCommand cmd = null;
          DbDataReader dr = null;
 
-         if (string.IsNullOrEmpty(abbr))
-            throw new ArgumentException("abbr is a required parameter", nameof(abbr));
+         if (string.IsNullOrEmpty(stateAbbr))
+            throw new ArgumentException("stateAbbr is a required parameter", nameof(stateAbbr));
 
          if (count <= 0)
             throw new ArgumentException("count must be > 0", nameof(count));
@@ -112,14 +109,13 @@ namespace RSS
          {
             cmd = _dbConn.CreateCommand();
 
-            cmd.CommandText = "SELECT TOP (@count) " + ColumnList +
-               " FROM rss_item i, rss_feed f, state s WHERE s.abbr = @abbr AND " +
-               "i.feed_id = f.feed_id AND f.regional = 0 AND " +
-               "(i.title COLLATE sql_latin1_general_cp1_ci_as LIKE '%' + s.name + '%' OR i.description COLLATE sql_latin1_general_cp1_ci_as LIKE '%' + s.name + '%') " +
+            cmd.CommandText = "SELECT TOP (@count) * FROM v_rss_item i, rss_feed f, state s WHERE " +
+               "s.abbr = @abbr AND i.feed_id = f.feed_id AND f.regional = 0 AND " +
+               "(i.item_title COLLATE sql_latin1_general_cp1_ci_as LIKE '%' + s.name + '%' OR i.description COLLATE sql_latin1_general_cp1_ci_as LIKE '%' + s.name + '%') " +
                "ORDER BY i.ins_date DESC";
 
             cmd.Parameters.Add(CreateParameter(cmd, "@count", DbType.Int32, count));
-            cmd.Parameters.Add(CreateParameter(cmd, "@abbr", DbType.String, abbr));
+            cmd.Parameters.Add(CreateParameter(cmd, "@abbr", DbType.String, stateAbbr));
             dr = cmd.ExecuteReader(CommandBehavior.SingleResult);
 
             var items = ReadToItemList(dr);
@@ -151,9 +147,27 @@ namespace RSS
          {
             cmd = _dbConn.CreateCommand();
 
-            cmd.CommandText = "WITH tbl AS (SELECT i.title, i.description FROM rss_item i, rss_feed f WHERE f.feed_id = i.feed_id and f.regional = 0 AND i.ins_date > DATEADD(HOUR, @hour, GETUTCDATE())) " +
-               "SELECT s.abbr, COUNT(*) FROM tbl, state s WHERE tbl.title COLLATE sql_latin1_general_cp1_ci_as LIKE '% + s.name + %' OR tbl.description COLLATE sql_latin1_general_cp1_ci_as LIKE '%' + s.name + '%' " +
-               "GROUP BY s.abbr ORDER BY COUNT(*) DESC, s.abbr ASC";
+            cmd.CommandText =
+@"WITH tbl AS (
+   SELECT 
+      i.title, i.description 
+   FROM 
+      rss_item i, rss_feed f 
+   WHERE 
+      f.feed_id = i.feed_id AND f.regional = 0 AND 
+      i.ins_date > DATEADD(HOUR, @hour, GETUTCDATE())
+) 
+SELECT 
+   s.abbr, COUNT(*) 
+FROM 
+   tbl, state s 
+WHERE 
+   tbl.title COLLATE sql_latin1_general_cp1_ci_as LIKE '%' + s.name + '%' OR 
+   tbl.description COLLATE sql_latin1_general_cp1_ci_as LIKE '%' + s.name + '%' 
+GROUP BY 
+   s.abbr 
+ORDER BY 
+   COUNT(*) DESC, s.abbr ASC";
 
             cmd.Parameters.Add(CreateParameter(cmd, "@hour", DbType.Int32, -hours));
             dr = cmd.ExecuteReader(CommandBehavior.SingleResult);
@@ -208,7 +222,7 @@ WITH items AS (
       f.feed_id = i.feed_id AND 
       f.regional = 0 AND 
       i.ins_date > DATEADD(HOUR, -@setCount, GETUTCDATE()) AND 
-      (i.title COLLATE sql_latin1_general_cp1_ci_as LIKE '% + s.name + %' OR 
+      (i.title COLLATE sql_latin1_general_cp1_ci_as LIKE '%' + s.name + '%' OR 
       i.description COLLATE sql_latin1_general_cp1_ci_as LIKE '%' + s.name + '%')
 ),
 hours AS (
@@ -238,13 +252,12 @@ OPTION (MAXRECURSION 0)";
 
             List<StateActivity> set = new List<StateActivity>();
             DateTime setDate = DateTime.MinValue;
-            int rowCount = 0;
 
             while (dr.Read())
             {
-               rowCount++;
                DateTime d = DateTime.SpecifyKind(dr.GetDateTime(0), DateTimeKind.Utc);
 
+               // assign setDate to value in first row
                if (setDate == DateTime.MinValue)
                   setDate = d;
 
@@ -274,7 +287,8 @@ OPTION (MAXRECURSION 0)";
       /// <summary>
       /// Returns a list of the 100 most frequently occurring words in the title
       /// and description of items retrieved within the last 
-      /// <paramref name="hours">N hours</paramref>.
+      /// <paramref name="hours">N hours</paramref>. This will exclude articles,
+      /// pronouns, prepositions, conjunctions, and other common words, if desired.
       /// </summary>
       public IReadOnlyList<WordCount> GetTrendingWords(int hours, bool filterCommonWords)
       {
@@ -341,24 +355,61 @@ WHERE i.ins_date > DATEADD(HOUR, -@hour, GETUTCDATE()) AND word NOT IN (SELECT i
          if (filterCommonWords)
             commonWords = GetCommonWords();
 
-         var feeds = GetFeeds();
+         // pulling the complete rss_item row, including the xml column, is unecessary
+         // and results in excessive network traffic
+         //var feeds = GetFeeds();
+         //var items = GetItemsByRange(DateTime.UtcNow.AddHours(-hours), DateTime.UtcNow);
 
-         var items = GetItemsByRange(
-            DateTime.UtcNow.AddHours(-hours), DateTime.UtcNow);
+         DbCommand cmd = null;
+         DbDataReader dr = null;
+         List<Item> items = new List<Item>();
+
+         try
+         {
+            cmd = _dbConn.CreateCommand();
+
+            cmd.CommandText = "SELECT i.title, i.description FROM rss_item i, rss_feed f " +
+               "WHERE i.feed_id = f.feed_id AND f.regional = 0 AND i.ins_date > DATEADD(HOUR, -@hour, GETUTCDATE())";
+
+            cmd.Parameters.Add(CreateParameter(cmd, "@hour", DbType.Int32, hours));
+            dr = cmd.ExecuteReader(CommandBehavior.SingleResult);
+
+            if (!dr.HasRows)
+               return null;
+
+            while (dr.Read())
+            {
+               Item i = new Item();
+               i.Description = dr.GetString(1);
+               i.Title = dr.GetString(0);
+               items.Add(i);
+            }
+         }
+         finally
+         {
+            Cleanup(cmd, dr);
+         }
 
          if (items == null)
             return null;
 
          // filter out items from regional feeds, and split the title/desc
          // text into a set of distinct word arrays
-         var splits = items.Where(item => (feeds.Where(f => f.FeedId == item.FeedId).First().IsRegional == false))
+
+         /*var splits = items.Where(item => (feeds.Where(f => f.FeedId == item.FeedId).First().IsRegional == false))
             .Select(i => SQLServerUDF.SQLServerUDF.SplitString(
                i.Title.ToLower() + " " + i.DescriptionInnerText().ToLower(),
-               true, true, true, true, true));
+               true, true, true, true, true));*/
+
+         // since the above SQL query filters by regional, we no longer need
+         // do so in LINQ
+         var splits = items.Select(i => SQLServerUDF.SQLServerUDF.SplitString(
+            i.Title.ToLower() + " " + i.DescriptionInnerText().ToLower(),
+            true, true, true, true, true));
 
          // flatten the word arrays into a single array, filter out
-         // ignorable words, group and select all remaining words by count,
-         // sort and take the top 100
+         // ignorable and common words, group and select all remaining words by count,
+         // sort by count, and finally take the top 100
          var words = splits.SelectMany(split => split.Cast<string>().ToArray())
             .Where(s => !ignorableWords.Contains(s))
             .Where(s => !commonWords.Contains(s))
@@ -377,10 +428,10 @@ WHERE i.ins_date > DATEADD(HOUR, -@hour, GETUTCDATE()) AND word NOT IN (SELECT i
 
 
       /// <summary>
-      /// Retrieve hourly usage counts for a given word, spaning the past 
+      /// Retrieve hourly usage counts for a given word, spanning the past 
       /// <paramref name="hours">hours</paramref>. Note that the number of counts
-      /// will total N+1 hours, to account for the partial hour which has elapsed
-      /// at the time the method is called.
+      /// will total N+1 hours, to account for the partial hour which elapsed
+      /// before the method was called.
       /// </summary>
       /// <returns>A list of date/count combos, in which the date is formatted as
       /// yyyyMMddHH (military hours). and the counts represent hourly usage.</returns>
@@ -421,8 +472,12 @@ WHERE i.ins_date > DATEADD(HOUR, -@hour, GETUTCDATE()) AND word NOT IN (SELECT i
                DateTime insDate = DateTime.SpecifyKind(dr.GetDateTime(0), DateTimeKind.Utc);
                string dayHour = insDate.ToString("yyyyMMddHH");
                string title = dr.GetString(1).ToLower();
-               string desc = dr.GetString(2).ToLower(); ;
+               string desc = dr.GetString(2).ToLower();
 
+               // the SQL just searches for a substring, not a distinct word.
+               // So, if we're looking for 'ark', the SQL will return rows
+               // containing 'hark', 'bark', etc.  This will ensure that the
+               // current row really contains the word 'ark'.
                var words = SQLServerUDF.SQLServerUDF.SplitString(title + " " + desc,
                   true, true, true, true, true);
 
@@ -523,6 +578,7 @@ WHERE i.ins_date > DATEADD(HOUR, -@hour, GETUTCDATE()) AND word NOT IN (SELECT i
             t = _dbConn.BeginTransaction();
             cmd = _dbConn.CreateCommand();
             cmd.CommandText = @"DELETE FROM common_word";
+            cmd.CommandTimeout = 100000;
             cmd.Transaction = t;
             cmd.ExecuteNonQuery();
 
@@ -581,7 +637,24 @@ WHERE i.ins_date > DATEADD(HOUR, -@hour, GETUTCDATE()) AND word NOT IN (SELECT i
             if (count < 1)
                return GetBleepedTitlesLinq();
 
-            cmd.CommandText = "SELECT dbo.UdfBleep(title) FROM rss_item WHERE dbo.UdfNeedsBleeping(title) = 1";
+            //cmd.CommandText = "SELECT dbo.UdfBleep(title) FROM rss_item WHERE dbo.UdfNeedsBleeping(title) = 1";
+
+            // this is slightly quicker
+            cmd.CommandText = @"
+WITH tbl AS (
+   SELECT 
+      title 
+   FROM 
+      rss_item INNER JOIN profanity 
+   ON 
+      title LIKE ('%' + word + '%')
+) 
+SELECT 
+   dbo.UdfBleep(tbl.title) 
+FROM 
+   tbl 
+WHERE 
+   dbo.UdfNeedsBleeping(title) = 1";
 
             List<string> titles = new List<string>();
             dr = cmd.ExecuteReader(CommandBehavior.SingleResult);
@@ -651,7 +724,7 @@ WHERE i.ins_date > DATEADD(HOUR, -@hour, GETUTCDATE()) AND word NOT IN (SELECT i
       /// <summary>
       /// Execute an arbitrary SQL stored procedure.
       /// 
-      /// Um, don't put something like this in a real app, m'kay?
+      /// Disclaimer: I know this is bad: don't put something like this in a real app, m'kay?
       /// </summary>
       public DataTable SelectExec(string procName)
       {

@@ -89,27 +89,14 @@ li.navDrop a:link, li.navDrop a:visited {
 }
 
 /* news menu */
-.circle {
-   display: inline-block;
-   width: 26px;
-   height: 26px;
-   border-radius: 50%;
-   border: 0;
-   margin: 0 3px 0 0;
-   padding: 0;
-   vertical-align:middle;
-   background-color: #99BBEE;
-   color: white;
-   text-align:center;
-   outline: none;
-}
-
 #rsskeywords {
    font-size: .75em;
    width: 100%;
    display: inline-block;
+   background-color: white;
 }
 
+/* increase the font size when user is editing keywords */
 #rsskeywords:focus {
    font-size: larger;
 }
@@ -137,8 +124,8 @@ div[contenteditable=true] {
 
 .newitem {
    font-size: larger;
-   background-color: #e0ffe0;
-   border: solid 1px #d9eed9;
+   background-color: #e0ffe0; /* green */
+   /*border: solid 1px #e0eee0;*/
    -webkit-animation: fadeIn ease 2s;
    -moz-animation: fadeIn ease 2s;
    -o-animation: fadeIn ease 2s;
@@ -147,8 +134,9 @@ div[contenteditable=true] {
 }
 
 .olditem {
-   background-color: #f8f3f5;
-   border: solid 1px #e9e2e4;
+   background-color: white;/*#fcf8fa;  grey */
+   /*border: solid 1px #ebebeb;*/
+   border: solid 1px #DDDDDD;
 }
 
 .olditem .itemdesc {
@@ -157,8 +145,8 @@ div[contenteditable=true] {
 
 .impitem {
    font-size: larger;
-   background-color: #ffffcc;
-   border: solid 1px #eeeebb;
+   background-color: #ffffcc; /* yellow */
+   /*border: solid 1px #eeeebb;*/
 }
 
 .impitem .itemdesc {
@@ -185,7 +173,7 @@ div[contenteditable=true] {
 .itemurl {
    color: royalblue;
    font-weight: bold;
-   text-decoration: none;
+   text-decoration: none; /* remove underline from anchor */
 }
 
 .itemdate {
@@ -248,6 +236,8 @@ div[contenteditable=true] {
 }
 
 /* responsiveness */
+
+/* switch between wide menu and dropdown menu, based on screen width */
 @media only screen and (max-width: 320px) {
    .navLong {
       display: none;
@@ -258,6 +248,7 @@ div[contenteditable=true] {
    }
 }
 
+/* one column */
 @media only screen and (max-width: 600px) {
    .newitem, .olditem, .impitem, .sseerror {
       max-width: 100%;
@@ -276,6 +267,7 @@ div[contenteditable=true] {
    }
 }
 
+/* two columns */
 @media only screen and (min-width: 992px) {
    .newitem, .olditem, .impitem, .sseerror {
       min-width: 49.5%;
@@ -290,6 +282,7 @@ div[contenteditable=true] {
    }
 }
 
+/* three columns */
 @media only screen and (min-width: 1920px) {
    .newitem, .olditem, .impitem, .sseerror {
       min-width: 33%;

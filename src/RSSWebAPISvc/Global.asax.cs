@@ -5,6 +5,7 @@ using System.Web.Http;
 
 namespace RSSWebAPISvc
 {
+   [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
    public class Global : HttpApplication
    {
       protected void Application_Start()
@@ -19,12 +20,14 @@ namespace RSSWebAPISvc
 
          try
          {
-            // add a trace filter to the output stream so it can be logged
             app = sender as HttpApplication;
+
+            // add a trace filter to the output stream so it can be logged in
+            // Application_EndRequest
             app.Response.Filter = new Util.FilterStream(app.Response.Filter);
 
             // log the input request
-            log4net.LogManager.GetLogger("GlobalRequest").Debug(app.Request.RawUrl);
+            log4net.LogManager.GetLogger("RSSWebAPISvc").Debug(app.Request.RawUrl);
 
             byte[] bytes = new byte[app.Request.InputStream.Length];
             app.Request.InputStream.Read(bytes, 0, (int)app.Request.InputStream.Length);
@@ -32,7 +35,7 @@ namespace RSSWebAPISvc
             String s = System.Text.Encoding.UTF8.GetString(bytes);
 
             if (!string.IsNullOrWhiteSpace(s))
-               log4net.LogManager.GetLogger("GlobalRequest").Debug(s);
+               log4net.LogManager.GetLogger("RSSWebAPISvc").Debug(s);
          }
          catch (Exception)
          {
@@ -56,7 +59,7 @@ namespace RSSWebAPISvc
             string s = ((Util.FilterStream)app.Response.Filter).ReadStream();
 
             if (!string.IsNullOrWhiteSpace(s))
-               log4net.LogManager.GetLogger("GlobalResponse").Debug(s);
+               log4net.LogManager.GetLogger("RSSWebAPISvc").Debug(s);
          }
          catch (Exception)
          {

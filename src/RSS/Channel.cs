@@ -8,7 +8,7 @@ namespace RSS
 {
    /// <summary>
    /// A channel contains header attributes describing the feed, and a list of
-   /// child items.
+   /// child items which contain the actual articles.
    /// </summary>
    public class Channel : RssBase
    {

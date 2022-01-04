@@ -29,15 +29,15 @@ namespace RSSWeb
 
          if (lastError != null)
          {
-            log4net.LogManager.GetLogger("GlobalError").Error(lastError.Message);
-            log4net.LogManager.GetLogger("GlobalError").Error(lastError.StackTrace);
+            log4net.LogManager.GetLogger("RSSWeb").Error(lastError.Message);
+            log4net.LogManager.GetLogger("RSSWeb").Error(lastError.StackTrace);
 
             var baseError = lastError.GetBaseException();
 
             if (baseError != null)
             {
-               log4net.LogManager.GetLogger("GlobalError").Error(baseError.Message);
-               log4net.LogManager.GetLogger("GlobalError").Error(baseError.StackTrace);
+               log4net.LogManager.GetLogger("RSSWeb").Error(baseError.Message);
+               log4net.LogManager.GetLogger("RSSWeb").Error(baseError.StackTrace);
             }
          }
 

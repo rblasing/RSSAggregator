@@ -32,25 +32,15 @@ namespace RSSWCFSvc
          SqlConnection dbConn = null;
          getItemsResponse rsp = new getItemsResponse() { Body = new getItemsResponseBody() };
 
-         string key = System.Web.HttpContext.Current?.Request?.UserHostAddress;
+         rsp.Body.error = ShouldThrottle();
 
-         if (key != null  &&
-            Util.WSBase.ShouldThrottle(key, throttleRate, out retrySec, out errorMsg))
-         {
-            Logger?.Warn(errorMsg);
-
-            rsp.Body.error = new WSError(WSErrorType.Unavailable, true,
-               retrySec.ToString(),
-               "Throttling has been activated for this connection. Retry in " +
-               retrySec.ToString() + " seconds.");
-               
+         if (rsp.Body.error != null)
             return rsp;
-         }
 
          if (string.IsNullOrWhiteSpace(request.Body.keyword))
          {
             rsp.Body.error = new WSError(WSErrorType.InvalidArgument, false,
-               "keyword", "keyword elememt is required");
+               "keyword", "keyword element is required");
 
             return rsp;
          }
@@ -95,20 +85,10 @@ namespace RSSWCFSvc
          SqlConnection dbConn = null;
          getItemsResponse rsp = new getItemsResponse() { Body = new getItemsResponseBody() };
 
-         string key = System.Web.HttpContext.Current?.Request?.UserHostAddress;
+         rsp.Body.error = ShouldThrottle();
 
-         if (key != null  &&
-            Util.WSBase.ShouldThrottle(key, throttleRate, out retrySec, out errorMsg))
-         {
-            Logger?.Warn(errorMsg);
-
-            rsp.Body.error = new WSError(WSErrorType.Unavailable, true,
-               retrySec.ToString(),
-               "Throttling has been activated for this connection. Retry in " +
-               retrySec.ToString() + " seconds.");
-
+         if (rsp.Body.error != null)
             return rsp;
-         }
 
          if (request.Body.minDateTime.Kind != DateTimeKind.Utc)
          {
@@ -177,20 +157,10 @@ namespace RSSWCFSvc
          SqlConnection dbConn = null;
          getItemsResponse rsp = new getItemsResponse() { Body = new getItemsResponseBody() };
 
-         string key = System.Web.HttpContext.Current?.Request?.UserHostAddress;
+         rsp.Body.error = ShouldThrottle();
 
-         if (key != null  &&
-            Util.WSBase.ShouldThrottle(key, throttleRate, out retrySec, out errorMsg))
-         {
-            Logger?.Warn(errorMsg);
-
-            rsp.Body.error = new WSError(WSErrorType.Unavailable, true,
-               retrySec.ToString(),
-               "Throttling has been activated for this connection. Retry in " +
-               retrySec.ToString() + " seconds.");
-
+         if (rsp.Body.error != null)
             return rsp;
-         }
 
          if (request.Body.itemCount <= 0)
          {
@@ -257,6 +227,32 @@ namespace RSSWCFSvc
          }
 
          return (list.Count > 0 ? list : null);
+      }
+
+
+      /// <summary>
+      /// Prevent the caller from placing more calls/sec than allowed.
+      /// </summary>
+      /// <returns></returns>
+      [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+      private WSError ShouldThrottle()
+      {
+         string key = System.Web.HttpContext.Current?.Request?.UserHostAddress;
+
+         if (key != null  &&
+            Util.WSBase.ShouldThrottle(key, throttleRate, out retrySec, out errorMsg))
+         {
+            Logger?.Warn(errorMsg);
+
+            WSError rsp = new WSError(WSErrorType.Unavailable, true,
+               retrySec.ToString(),
+               "Throttling has been activated for this connection. Retry in " +
+               retrySec.ToString() + " seconds.");
+
+            return rsp;
+         }
+
+         return null;
       }
    }
 }

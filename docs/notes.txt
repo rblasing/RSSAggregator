@@ -1,65 +1,71 @@
 === OVERVIEW ==================================================================
 
-Features
-Â  * queries RSS feeds within a process that can be executed as either a console
-    app, Windows service, or Azure WebJob
-Â  * stores historical items in server DB
+Need to:
+* Offline keyword search
+* Cross browser testing.
+* Enable switching between CSS themes
+* Find use for Drag and drop
 
-Â  * publishes feed of latest 100 items, which are rendered in the browser via
+Site that
+  * queries RSS feeds within a process that can be executed as either a console app,
+    Windows service, or Azure WebJob 
+  * stores historical items in server DB
+
+  * publishes feed of latest 100 items, which are rendered in the browser via
     a referenced XSLT
   * pushes new items to browser clients via SSE
-Â  * recovers from client disconnects by pushing catchup item messages,
+  * recovers from client disconnects by pushing catchup item messages,
     using the Last-Event-ID header (Firefox incompatible)
-  * retrieves a set of catchup items on initial page launch (only if on LAN or
-    WAN).
-Â  * filters images and feed 'flare' before pushing to clients
+  * retrieves a set of catchup items on initial page launch (only if on LAN or WAN).
+  * filters images and feed 'flare' before pushing to clients
 
-Â  * caches latest 5000 items in browser storage
-Â  * enables infinite scrolling of past 5000 items held in browser storage
+  * caches latest 1000 items in browser storage
+  * enables infinite scrolling of past 1000 items held in browser storage
 
   * allows server feed management
 
   * is responsive to device screen size
-Â  * allows user to set font size, saving preference in broweser's local storage
-Â  * highlights items which contain user-defined keywords
-Â  * allows searching by keyword, and download of results as XLSX using OpenXML
+  * allows user to set font size, saving preference in browser's local storage
+  * highlights items which contain user-defined keywords
+  * allows searching by keyword, and download of results as XSLX using OpenXML
 
-Â  * logs system warnings and errors to server DB
+  * logs system warnings and errors to server DB
   * has been validated with unit tests
   * exposes a WCF service which responds to both SOAP and JSON/HTTP requests
   * exposes a WebAPI service which provides RESTful access
-  * displays a live heat map of news activity by state, using a clickable SVG
-    image
+  * displays a live heat map of news activity by state, using a clickable SVG image
+  * graphs trending keywords over a 8-72hr time range, using HTML Canvas API
 
 Demonstrates:
-Â  Â * C#
+   * C#
    * ADO.NET
-Â  Â * JavaScript
-Â  Â * Regex
+   * JavaScript
+   * Regex
    * LINQ
-Â  Â * HTML
-Â  Â * CSS
-Â  Â * Responsive CSS
-Â  Â * MVC
-Â  Â * WCF
+   * HTML
+   * CSS
+   * Responsive CSS
+   * MVC
+   * WCF
    * WebAPI
-Â  Â * SOAP
-Â  Â * REST
-Â  Â * SSE
-Â  Â * WebSQL
-Â  Â * IndexedDB
-Â  Â * Web storage
-Â  Â * SQL
-Â  Â * RSS
-Â  Â * OpenXML
-Â  Â * XML
-Â  Â * XSLT
-Â  Â * XPath
+   * SOAP
+   * REST
+   * SSE
+   * Web Workers
+   * WebSQL
+   * IndexedDB
+   * Web storage
+   * SQL
+   * RSS
+   * OpenXML
+   * XML
+   * XSLT
+   * XPath
    * SVG
    * Canvas
-Â  Â * log4net
+   * log4net
    * Windows system services
-Â  Â * Azure
+   * Azure
 
 
 
@@ -74,16 +80,33 @@ CREATE TABLE rss_feed (
 );
 
 CREATE TABLE rss_item (
+   item_id      INT            PRIMARY KEY IDENTITY(1, 1),
    feed_id      INT            FOREIGN KEY REFERENCES rss_feed(feed_id),
    ins_date     DATETIME2      NOT NULL DEFAULT (GETUTCDATE()),
    pub_date     DATETIME2      NOT NULL,
    title        NVARCHAR(450)  NOT NULL,
    description  NVARCHAR(MAX),
-   url          NVARCHAR(400)  PRIMARY KEY,
+   url          NVARCHAR(400)  UNIQUE,
    xml          XML
 );
 
-CREATE INDEX idx_item_ins_date ON rss_item(ins_date);
+CREATE INDEX idx_rss_item_ins_date ON rss_item(ins_date);
+
+CREATE SELECTIVE XML INDEX sidx_rss_item ON rss_item(xml) FOR (pubDatePath = '/item/pubDate');
+ALTER INDEX sidx_rss_item ON rss_item FOR (ADD enclosurePath = '/item/enclosure');
+ALTER INDEX sidx_rss_item ON rss_item FOR (ADD descPath = '/item/description');
+
+CREATE VIEW v_rss_item AS SELECT i.item_id [item_id],
+  i.feed_id [feed_id],
+  i.ins_date [ins_date],
+  i.pub_date [pub_date],
+  i.title [item_title],
+  i.description [description],
+  i.url [url],
+  i.xml [xml],
+  f.title [feed_title] FROM 
+rss_item i, rss_feed f WHERE i.feed_id = f.feed_id;
+
 
 CREATE TABLE state (
    name       NVARCHAR(25)  NOT NULL,
@@ -92,7 +115,7 @@ CREATE TABLE state (
 );
 
 CREATE TABLE ignore_word (
-   word NVARCHAR(100) PRIMARY KEY
+   word  NVARCHAR(100)  PRIMARY KEY
 );
 
 CREATE TABLE common_word (
@@ -116,7 +139,6 @@ CREATE TABLE log4net (
    message    VARCHAR(4000)  NOT NULL,
    exception  VARCHAR(2000)  NULL
 );
-
 
 
 
@@ -178,11 +200,18 @@ END;
 go
 
 
+=== CREATE CERTIFICATES =======================================================
 
+makecert -r -pe -n "CN=Blasingame" -sky exchange Blasingame.cer -sv Blasingame.pvk
+"c:\program files (x86)\windows kits\8.1\bin\x86\pvk2pfx.exe" -pvk Blasingame.pvk -spc Blasingame.cer -pfx Blasingame.pfx
+
+makecert -r -pe -n "CN=Blasingame Client" -sky exchange BlasingameClient.cer -sv BlasingameClient.pvk
+"c:\program files (x86)\windows kits\8.1\bin\x86\pvk2pfx.exe" -pvk BlasingameClient.pvk -spc BlasingameClient.cer -pfx BlasingameClient.pfx
+
+passwords for all is 8675309
 
 === RSS ELEMENTS ==============================================================
-Name         Namespace
----------- : --------------------------------------------
+
 abcnews    : http://abcnews.com/content/
 atom       : http://www.w3.org/2005/Atom
 content    : http://purl.org/rss/1.0/modules/content/
@@ -201,110 +230,93 @@ sy         : http://purl.org/rss/1.0/modules/syndication/
 wfw        : http://wellformedweb.org/CommentAPI/
 
 /rss/channel
-/rss/channel/feedburner:browserFriendly
-/rss/channel/feedburner:browserFriendly/#text
-/rss/channel/copyright
-/rss/channel/copyright/#cdata-section
-/rss/channel/copyright/#text
-/rss/channel/description
-/rss/channel/description/#cdata-section
-/rss/channel/description/#text
-/rss/channel/feedburner:feedFlare
-/rss/channel/feedburner:feedFlare/#text
-/rss/channel/generator
-/rss/channel/generator/#text
-/rss/channel/image
-/rss/channel/image/description
-/rss/channel/image/description/#text
-/rss/channel/image/height
-/rss/channel/image/height/#text
-/rss/channel/image/link
-/rss/channel/image/link/#text
-/rss/channel/image/title
-/rss/channel/image/title/#text
-/rss/channel/image/url
-/rss/channel/image/url/#text
-/rss/channel/image/width
-/rss/channel/image/width/#text
-/rss/channel/feedburner:info
-/rss/channel/language
-/rss/channel/language/#cdata-section
-/rss/channel/language/#text
-/rss/channel/lastBuildDate
-/rss/channel/lastBuildDate/#text
-/rss/channel/link
-/rss/channel/link/#text
-/rss/channel/atom:link
-/rss/channel/atom10:link
-/rss/channel/pubDate
-/rss/channel/pubDate/#text
-/rss/channel/robots
-/rss/channel/site
-/rss/channel/site/#text
+/rss/channel/      itunes:author
+/rss/channel/  feedburner:browserFriendly
+/rss/channel/             copyright
+/rss/channel/             copyright/#cdata-section
+/rss/channel/             description
+/rss/channel/             description/#cdata-section
+/rss/channel/  feedburner:feedFlare
+/rss/channel/             generator
+/rss/channel/             image
+/rss/channel/             image/link
+/rss/channel/             image/title
+/rss/channel/             image/url
+/rss/channel/  feedburner:info
+/rss/channel/             language
+/rss/channel/             language/#cdata-section
+/rss/channel/             lastBuildDate
+/rss/channel/             link
+/rss/channel/        atom:link
+/rss/channel/      atom10:link
+/rss/channel/             pubDate
+/rss/channel/             robots
+/rss/channel/             site
 /rss/channel/thespringbox:skin
-/rss/channel/thespringbox:skin/#text
-/rss/channel/title
-/rss/channel/title/#cdata-section
-/rss/channel/title/#text
-/rss/channel/ttl
-/rss/channel/ttl/#text
-/rss/channel/sy:updateFrequency
-/rss/channel/sy:updateFrequency/#text
-/rss/channel/sy:updatePeriod
-/rss/channel/sy:updatePeriod/#text
+/rss/channel/             title
+/rss/channel/             title/#cdata-section
+/rss/channel/             ttl
+/rss/channel/          sy:updateFrequency
+/rss/channel/          sy:updatePeriod
 
 /rss/channel/item
-/rss/channel/item/author
-/rss/channel/item/author/#cdata-section
-/rss/channel/item/author/#text
-/rss/channel/item/category
-/rss/channel/item/category/#cdata-section
-/rss/channel/item/category/#text
-/rss/channel/item/comments
-/rss/channel/item/comments/#text
-/rss/channel/item/slash:comments
-/rss/channel/item/slash:comments/#text
-/rss/channel/item/wfw:commentRss
-/rss/channel/item/wfw:commentRss/#text
-/rss/channel/item/media:content
-/rss/channel/item/media:content/media:credit
-/rss/channel/item/media:content/media:credit/#cdata-section
-/rss/channel/item/media:content/media:credit/#text
-/rss/channel/item/media:content/media:description
-/rss/channel/item/media:content/media:description/#cdata-section
-/rss/channel/item/media:content/media:title
-/rss/channel/item/media:content/media:title/#text
-/rss/channel/item/dc:creator
-/rss/channel/item/dc:creator/#cdata-section
-/rss/channel/item/dc:creator/#text
-/rss/channel/item/media:credit
-/rss/channel/item/media:credit/#text
-/rss/channel/item/description
-/rss/channel/item/description/#cdata-section
-/rss/channel/item/description/#text
-/rss/channel/item/media:description
-/rss/channel/item/media:description/#text
-/rss/channel/item/enclosure
-/rss/channel/item/content:encoded
-/rss/channel/item/content:encoded/#cdata-section
-/rss/channel/item/media:group
-/rss/channel/item/media:group/media:content
-/rss/channel/item/guid
-/rss/channel/item/guid/#cdata-section
-/rss/channel/item/guid/#text
-/rss/channel/item/media:keywords
-/rss/channel/item/media:keywords/#text
-/rss/channel/item/link
-/rss/channel/item/link/#cdata-section
-/rss/channel/item/link/#text
-/rss/channel/item/atom:link
+/rss/channel/item/        wp:arc_uuid
+/rss/channel/item/        wp:arc_uuid/#cdata-section
+/rss/channel/item/           author
+/rss/channel/item/           author/#cdata-section
+/rss/channel/item/    itunes:author
+/rss/channel/item/           category
+/rss/channel/item/           category/#cdata-section
+/rss/channel/item/       wfw:commentRss
+/rss/channel/item/           comments
+/rss/channel/item/     slash:comments
+/rss/channel/item/     media:content
+/rss/channel/item/     media:content/media:credit
+/rss/channel/item/     media:content/media:credit/#cdata-section
+/rss/channel/item/     media:content/media:description
+/rss/channel/item/     media:content/media:description/#cdata-section
+/rss/channel/item/     media:content/media:player
+/rss/channel/item/     media:content/media:subTitle
+/rss/channel/item/     media:content/media:text
+/rss/channel/item/     media:content/media:thumbnail
+/rss/channel/item/     media:content/media:title
+/rss/channel/item/     media:content/media:title/#cdata-section
+/rss/channel/item/        dc:creator
+/rss/channel/item/        dc:creator/#cdata-section
+/rss/channel/item/     media:credit
+/rss/channel/item/           dateTimeWritten
+/rss/channel/item/           description
+/rss/channel/item/           description/#cdata-section
+/rss/channel/item/     media:description
+/rss/channel/item/    itunes:duration
+/rss/channel/item/           enclosure
+/rss/channel/item/   content:encoded
+/rss/channel/item/   content:encoded/#cdata-section
+/rss/channel/item/           expires
+/rss/channel/item/     media:group
+/rss/channel/item/     media:group/media:content
+/rss/channel/item/           guid
+/rss/channel/item/           guid/#cdata-section
+/rss/channel/item/     media:keywords
+/rss/channel/item/           link
+/rss/channel/item/           link/#cdata-section
+/rss/channel/item/      atom:link
+/rss/channel/item/        dc:modified
 /rss/channel/item/feedburner:origLink
-/rss/channel/item/feedburner:origLink/#text
-/rss/channel/item/post-id
-/rss/channel/item/post-id/#text
-/rss/channel/item/pubDate
-/rss/channel/item/pubDate/#text
-/rss/channel/item/media:thumbnail
-/rss/channel/item/title
-/rss/channel/item/title/#cdata-section
-/rss/channel/item/title/#text
+/rss/channel/item/           post-id
+/rss/channel/item/           pubDate
+/rss/channel/item/        dc:publisher
+/rss/channel/item/        dc:subject
+/rss/channel/item/     media:thumbnail
+/rss/channel/item/           title
+/rss/channel/item/           title/#cdata-section
+/rss/channel/item/           updateDate
+
+
+
+
+
+=== MISC ======================================================================
+
+Create video from time-lapse screen captures:
+   ffmpeg -i c:\temp\ScreenCapture\%6d.png -framerate 10 -r 10 -vf format=yuv420p test.mp4

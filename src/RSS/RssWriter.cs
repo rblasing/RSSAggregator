@@ -8,7 +8,7 @@ namespace RSS
 {
    public class RssWriter
    {
-      // data written to rollup feed
+      // data written to output feed
       private readonly SyndicationFeed _feed;
       private List<SyndicationItem> _items;
       private readonly string _xsltUri;
@@ -17,7 +17,7 @@ namespace RSS
       /// <summary>
       /// Create a <c>SyndicationFeed</c> object using the provided items.
       /// </summary>
-      /// <param name="title">Title ot new feed</param>
+      /// <param name="title">Title of new feed</param>
       /// <param name="itemsToPublish">Set of items to be published</param>
       /// <param name="rssUri">URL where published feed may be found</param>
       /// <param name="xsltUri">URL where feed's linked XSL may be found</param>
@@ -29,7 +29,7 @@ namespace RSS
          foreach (Item item in itemsToPublish)
             AddItem(item);
 
-         this._xsltUri = xsltUri;
+         _xsltUri = xsltUri;
 
          _feed = new SyndicationFeed()
          {
@@ -48,7 +48,7 @@ namespace RSS
 
 
       /// <summary>
-      /// Add new feed item to list which is to be exported to rollup feed
+      /// Add new feed item to list which is to be exported to output feed
       /// </summary>
       private void AddItem(Item item)
       {
@@ -71,7 +71,7 @@ namespace RSS
 
 
       /// <summary>
-      /// Publish rollup feed items to a RSS file
+      /// Publish feed items to a RSS file
       /// </summary>
       public void Write(string filename)
       {

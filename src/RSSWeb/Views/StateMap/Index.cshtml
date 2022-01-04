@@ -258,7 +258,6 @@
       padding: 3px 5px 3px 5px;
    }
 
-
    /* spin the replay icon when clicked so the user knows something is happening */
    .waiting {
       -webkit-animation: spin 4s linear infinite;
@@ -288,7 +287,7 @@
    }
 
 
-   /* rotate heat data bar so that it's horizontal */
+   /* rotate heat data bar on narrow screens so that it's horizontal */
    @@media only screen and (max-width: 768px) {
       #heatData {
          writing-mode: vertical-rl;
@@ -314,8 +313,14 @@
 
 
 <script type="text/javascript">
+   let usa = document.getElementById("usmap");
+   let states = usa.getElementsByClassName("state");
+   let evSrc;
+   let stateData;
+
+
    /**
-    * Retrieve a list of items associated with the clicked state and display
+    * Retrieve a list of items associated with the selected state and display
     * them in a table
     */
    function getStateItems(abbr)
@@ -330,19 +335,13 @@
          for (let idx = 0; idx < items.length; idx++)
          {
             let row = document.createElement("tr");
-            row.innerHTML = `<td style='padding-right: 20px'>${items[idx].PubDate}</td><td style='padding-right: 20px'>${items[idx].FeedName}</td><td><a target='_blank' href='${items[idx].Url}'>${items[idx].Title}</a></td>`;
+            row.innerHTML = `<td style='padding-right: 20px'>${shortDate(new Date(items[idx].PubDate))}</td><td style='padding-right: 20px'>${items[idx].FeedName}</td><td><a target='_blank' href='${items[idx].Url}'>${items[idx].Title}</a></td>`;
             newBody.appendChild(row);
          }
 
          tbl.replaceChild(newBody, tbl.getElementsByTagName("tbody")[0]);
       });
    }
-
-
-   let usa = document.getElementById("usmap");
-   let states = usa.getElementsByClassName("state");
-   let evSrc;
-   let stateData;
 
 
    /**
@@ -419,8 +418,10 @@
    }
 
 
+   // show animated history of heat map changes over last several hours
    async function replay()
    {
+      // please wait...
       replaySpinner.classList.add("waiting");
       let rsp = await fetch('@Url.Content("~/")' + "StateMap/GetStateHistory");
       replaySpinner.classList.remove("waiting");

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace RSS
 {
    /// <summary>
-   /// A Feed object represents the feed data located at a given URL.
+   /// A Feed object represents the feed resource located at a given URL.
    /// </summary>
    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
    public class Feed : RssBase

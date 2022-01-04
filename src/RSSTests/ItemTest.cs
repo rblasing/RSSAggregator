@@ -26,9 +26,17 @@ namespace RSSTests
 
 
       [TestMethod()]
-      public void DescriptionInnerTextTest()
+      [DataRow("Test string",                        "Test string")]
+      [DataRow("<b>Test</b> string",                 "Test string")]
+      [DataRow("Test &amp; string",                  "Test &amp; string")]
+      [DataRow("Test & string",                      "Test & string")]
+      [DataRow("Test <img src='image.jpg' />string", "Test string")]
+      public void DescriptionInnerTextTest(string input, string innerText)
       {
-         Item i = new Item { Description = "Test string" };
+         Item i = new Item { Description = input };
+         Assert.AreEqual(innerText, i.DescriptionInnerText());
+
+         /*Item i = new Item { Description = "Test string" };
          Assert.AreEqual("Test string", i.DescriptionInnerText());
 
          i.Description = "<b>Test</b> string";
@@ -41,7 +49,7 @@ namespace RSSTests
          Assert.AreEqual("Test & string", i.DescriptionInnerText());
 
          i.Description = "Test <img src='image.jpg' />string";
-         Assert.AreEqual("Test string", i.DescriptionInnerText());
+         Assert.AreEqual("Test string", i.DescriptionInnerText());*/
       }
 
 
@@ -89,7 +97,7 @@ namespace RSSTests
 
          Assert.AreEqual(i1, i2);
 
-         i2.Description = "d2"; ;
+         i2.Description = "d2";
          Assert.AreNotEqual(i1, i2);
          i2.Description = i1.Description;
 

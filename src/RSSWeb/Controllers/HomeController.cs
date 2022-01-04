@@ -47,8 +47,10 @@ namespace RSSWeb.Controllers
 
             if (topItems != null)
             {
+               // these characters will prevent Html.Raw() from parsing the
+               // entire string in the client code
                foreach (ItemRow item in topItems)
-                  sb.Append(TransForm(item.ToXml(false)));
+                  sb.Append(TransForm(item.ToXml(false)).Replace("'", "&apos;").Replace("\r", "").Replace("\n", ""));
             }
 
             ViewBag.topItems = sb.ToString();
@@ -70,6 +72,14 @@ namespace RSSWeb.Controllers
       }
 
 
+      /// <summary>
+      /// This transforms the XML representation of an Item object to an HTML
+      /// div containing the same information.  This is incredibly tight
+      /// coupling to the view, but it does serve the purpose of illustrating
+      /// usage of a XSL transformation.
+      /// </summary>
+      /// <param name="xml"></param>
+      /// <returns></returns>
       private static string TransForm(string xml)
       {
          string transformedXml;

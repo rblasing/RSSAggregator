@@ -34,7 +34,7 @@ namespace UnitTestCoverage
 
             // ignore abstract and auto-generated classes
             if (!targetClassType.IsAbstract  &&  !targetClassType.IsSpecialName  &&  
-               !targetClassType.Name.StartsWith("<")  &&
+               !targetClassType.IsEnum  &&  !targetClassType.Name.StartsWith("<")  &&
                !targetClassType.FullName.StartsWith("Microsoft.VisualStudio.Coverage")  &&
                !targetClassType.AssemblyQualifiedName.StartsWith("<"))
             {

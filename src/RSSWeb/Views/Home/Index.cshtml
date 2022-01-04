@@ -3,17 +3,31 @@
    ViewBag.Title = "News";
 }
 
+<style type="text/css">
+   body {
+      /*background-color: #f0f0f0;*/
+   }
+</style>
 <table style="margin: 1%">
    <tr>
       <td style="width: 1%">
-         <input type="button" value="&#9650;" onclick="fontInc();" class="circle" style="padding: 0 0 1px 0" />
+         <!-- circle with up arrow -->
+         <svg height="30" width="30" version="1.1" xmlns="http://www.w3.org/2000/svg" onclick="fontInc();" >
+            <circle cx="15" cy="15" r="14" stroke="#99BBEE" fill="#99BBEE"/>
+            <polygon points="7,21 23,21 15,6" stroke="white" fill="white" />
+         </svg>
       </td>
       <td style="width: 1%">
-         <input type="button" value="&#9660;" onclick="fontDec();" class="circle" style="padding: 1px 0 0 0" />
+         <!-- circle with down arrow -->
+         <svg height="30" width="30" version="1.1" xmlns="http://www.w3.org/2000/svg" onclick="fontDec();">
+            <circle cx="15" cy="15" r="14" stroke="#99BBEE" fill="#99BBEE"/>
+            <polygon points="7,9 23,9 15,24" stroke="white" fill="white" />
+         </svg>
       </td>
       <td><div id="rsskeywords" onblur="updateKeywords();" contenteditable="true" placeholder="Search terms..." spellcheck="false"></div></td>
    </tr>
 </table>
+
 
 <div id="ssecontent"></div>
 
@@ -73,7 +87,7 @@
    }
 
 
-   // save user's highlight keywords in local storage, and apply to content
+   // save keywords the user wants highlighted in local storage, and apply to content
    function updateKeywords()
    {
       let keywords = document.getElementById("rsskeywords").innerText;
@@ -138,8 +152,8 @@
          if (labels.length < 1)
             continue;
 
-         let stamp = new Date(labels[0].innerText);
-         stamp = new Date(labels[0].title);
+         //let stamp = new Date(labels[0].innerText);
+         let stamp = new Date(labels[0].title);
          labels[0].title = stamp;
          let span = timeSpan(stamp);
 
@@ -156,11 +170,13 @@
             else
                labels[0].innerText = span.minutes + " minutes ago";
          }
+         else
+            labels[0].innerText = shortDate(stamp);
       }
    }
 
 
-   // infinite scroll
+   // infinite scroll of items
    if (document.body.touchmove != undefined) // check if the client has a touchscreen
       document.body.touchmove = onScroll;
 
@@ -219,7 +235,7 @@
          else
             sseContent.insertBefore(div, sseContent.childNodes[0]);
       }
-      else
+      else  // HTML5 templates are not supported by this browser
       {
          let newItemTemplate = `<div class='box'><span class='feedname'>" +
             "${item.feedName}</span><span class='itemdate'><label title=" +
@@ -243,11 +259,12 @@
    }
 
 
+   // SSE message event handler
    function esOnMessage(e)
    {
       try
       {
-         // server will occasionally send comments to prevent conn timeout
+         // server will occasionally send comments to prevent connection timeout
          if (e.data == "nodata")
          {
             updateStamps();
@@ -259,7 +276,7 @@
 
          updateKeywords();
 
-         // set all existing items to old class, unless they contain keywords
+         // set all existing items to olditem class, unless they contain keywords
          // which are important to the user
          for (let rsIdx = 0; rsIdx < sseContent.childNodes.length; rsIdx++)
          {
@@ -303,52 +320,23 @@
    }
 
 
-   // wire everything up
-   window.onload = function ()
+   function wireSSE()
    {
-      sseContent = document.getElementById("ssecontent");
-
-      // create local DB, if it doesn't already exist
-      createDB();
-
-      // clear hash if user refreshes the page
-      if (pageAccessedByReload())
-         window.location.hash = "";
-
-      // restore DOM state if the user navigated away, then back to this page
-      if (window.location.hash)
-         sseContent.innerHTML = localStorage.getItem("sseContent");
-
-      // apply user preferences
-      let initPct = localStorage.getItem("rssFontPct");
-
-      if (initPct != null)
-      {
-         fontPct = parseInt(initPct);
-         sseContent.style.fontSize = initPct + "%";
-      }
-
-      let initKeywords = localStorage.getItem("rsskeywords");
-
-      if (initKeywords != null)
-      {
-         document.getElementById("rsskeywords").innerText = initKeywords;
-         updateKeywords();
-      }
-
-      updateStamps();
-
       // start listening for SSE messages (if supported by browser)
+
+      // if unsupported, use item set provided by server
       if (window.EventSource == undefined)
       {
-         sseContent.innerHTML = ViewBag.topItems;
+         let h = '@Html.Raw(ViewBag.topItems)';
+         sseContent.innerHTML = h;
+
          return;
       }
 
       getMaxItemStamp().then(function (stamp)
       {
          // try to catchup on missed items, but only if on a LAN or WAN. Don't
-         // waste cell data on this
+         // waste cell data on this.
          // (for purposes of demonstrating usage of this draft API, we'll allow 4G
          // connnections to be treated as LAN. Hopefully, all browsers will
          // agree on a common implementation in the near future.)
@@ -364,7 +352,8 @@
          }
          else
          {
-            sseContent.innerHTML = ViewBag.topItems;
+            let h = '@Html.Raw(ViewBag.topItems)';
+            sseContent.innerHTML = h;
             evSrc = new EventSource("@ViewBag.sseUri");
          }
 
@@ -403,6 +392,46 @@
             else
                console.error(e);
          }, false);
+      });
+   }
+
+
+   // wire everything up
+   window.onload = function ()
+   {
+      sseContent = document.getElementById("ssecontent");
+
+      // clear hash if user refreshes the page
+      if (pageAccessedByReload())
+         window.location.hash = "";
+
+      // restore DOM state if the user navigated away, then back to this page
+      if (window.location.hash)
+         sseContent.innerHTML = localStorage.getItem("sseContent");
+
+      // apply user preferences
+      let initPct = localStorage.getItem("rssFontPct");
+
+      if (initPct != null)
+      {
+         fontPct = parseInt(initPct);
+         sseContent.style.fontSize = initPct + "%";
+      }
+
+      let initKeywords = localStorage.getItem("rsskeywords");
+
+      if (initKeywords != null)
+      {
+         document.getElementById("rsskeywords").innerText = initKeywords;
+         updateKeywords();
+      }
+
+      updateStamps();
+
+      // create local DB, if it doesn't already exist
+      createDB().then(() =>
+      {
+         wireSSE();
       });
    };
 </script>

@@ -44,6 +44,7 @@ namespace blasingame.RSS.xsd
    }
 
 
+   [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
    [CollectionDataContractAttribute(Name = "ItemList",
       Namespace = "http://blasingame/RSS.xsd", ItemName = "item")]
    public class ItemList : System.Collections.Generic.List<Item>
@@ -51,6 +52,7 @@ namespace blasingame.RSS.xsd
    }
 
 
+   [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
    [DataContractAttribute(Name = "Item", Namespace = "http://blasingame/RSS.xsd")]
    public partial class Item
    {
@@ -97,6 +99,7 @@ namespace blasingame.RSS.xsd
    }
 
 
+   [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
    [MessageContractAttribute(IsWrapped = false)]
    public partial class getTopItemsRequest
    {
@@ -115,6 +118,7 @@ namespace blasingame.RSS.xsd
    }
 
 
+   [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
    [DataContractAttribute(Namespace = "http://blasingame/RSS.xsd")]
    public partial class getTopItemsRequestBody
    {
@@ -132,6 +136,7 @@ namespace blasingame.RSS.xsd
    }
 
 
+   [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
    [MessageContractAttribute(IsWrapped = false)]
    public partial class getItemsByRangeRequest
    {
@@ -150,6 +155,7 @@ namespace blasingame.RSS.xsd
    }
 
 
+   [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
    [DataContractAttribute(Namespace = "http://blasingame/RSS.xsd")]
    public partial class getItemsByRangeRequestBody
    {
@@ -172,6 +178,7 @@ namespace blasingame.RSS.xsd
    }
 
 
+   [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
    [MessageContractAttribute(IsWrapped = false)]
    public partial class getItemsByKeywordRequest
    {
@@ -190,6 +197,7 @@ namespace blasingame.RSS.xsd
    }
 
 
+   [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
    [DataContractAttribute(Namespace = "http://blasingame/RSS.xsd")]
    public partial class getItemsByKeywordRequestBody
    {
@@ -208,6 +216,7 @@ namespace blasingame.RSS.xsd
    [DataContractAttribute(Name = "WSError", Namespace = "http://blasingame/RSS.xsd")]
 
 
+   [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
    [MessageContractAttribute(IsWrapped = false)]
    public partial class getItemsResponse
    {
@@ -226,6 +235,7 @@ namespace blasingame.RSS.xsd
    }
 
 
+   [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
    [DataContractAttribute(Namespace = "http://blasingame/RSS.xsd")]
    public partial class getItemsResponseBody
    {
@@ -247,6 +257,7 @@ namespace blasingame.RSS.xsd
    }
 
 
+   [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
    public partial class WSError
    {
       private WSErrorType typeField;

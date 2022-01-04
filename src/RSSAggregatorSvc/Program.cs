@@ -21,7 +21,8 @@ namespace RssAggregatorSvc
          ServiceBase[] servicesToRun = new ServiceBase[] { svc };
 
          // if the exe is run from a shell, or if the config indicates
-         // it's deployed as an Azure WebJob, then start as a console app
+         // it's deployed as an Azure WebJob, then start as a console app.
+         // Otherwise, start as a Windows Service.
          if (isWebJob == "true"  ||  Environment.UserInteractive)
          {
             Console.WriteLine("Press ^C to exit...");

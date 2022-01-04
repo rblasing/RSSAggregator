@@ -3,7 +3,7 @@
 
  if (window.Worker)
  {
-    var w = new Worker("ErrorWorker.js");
+    var w = new Worker("~/ErrorWorker.js");
     w.postMessage({ message: "", url: "", line: 0, column: 0, error: "" });
 
     w.onmessage = function(e) {

@@ -3,9 +3,13 @@
 
 namespace RSS
 {
+   /// <summary>
+   /// Represents a row in the rss_item database table.
+   /// </summary>
    public class ItemRow : Item
    {
-      // table columns
+      // table columns associated with a feed item, but not a part of the
+      // RSS XML schema
       public int FeedId;
       public string FeedName;
       public DateTime InsDate;

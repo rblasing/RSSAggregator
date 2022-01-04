@@ -1,14 +1,15 @@
 ﻿const dbName = 'rss';
+let indexedDbVersion = 1;
 const maxLocalDbRows = 1000;
 
 // only execute WebSQL code when developing/debugging
 let useWebSQL = window.origin.toLowerCase().includes("localhost");
 
 
-function createDB()
+const createDB = () => new Promise(function (resolve)
 {
    // ask browser to request user verification before clearing storage data
-   if (navigator.storage  &&  navigator.storage.persist)
+   if (navigator.storage && navigator.storage.persist)
    {
       navigator.storage.persisted().then(function (isPersisted)
       {
@@ -21,15 +22,17 @@ function createDB()
                console.log("Storage persistance request honored? " + wasHonored);
             });
          }
+
+         if (!!window.indexedDB)
+            createIndexedDB();
+
+         if (!!window.openDatabase && useWebSQL)
+            createWebSQL();
       });
    }
 
-   if (!!window.indexedDB)
-      createIndexedDB();
-
-   if (!!window.openDatabase  &&  useWebSQL)
-      createWebSQL();
-}
+   resolve();
+});
 
 
 function addItemToDB(item)
@@ -70,7 +73,6 @@ const itemExists = (url) => new Promise(function (resolve)
    if (!!window.openDatabase  &&  useWebSQL)
       webSQLItemExists(url, resolve);
 });
-
 
 
 function logDbError(msg, u, l)
@@ -116,7 +118,7 @@ function createWebSQL()
          },
          function (tx, e)
          {
-            logDbError("rss_item create error: " + e.message, "", 119);
+            logDbError("rss_item create error: " + e.message, "", 121);
             return true; // rollback
          }
       );
@@ -147,7 +149,7 @@ function insertWebSQLRow(item)
          },
          function (tx, e)
          {
-            logDbError("INSERT error: " + e.message, "", 150);
+            logDbError("INSERT error: " + e.message, "", 152);
             return true; // rollback
          }
       );
@@ -169,7 +171,7 @@ function insertWebSQLRow(item)
                   },
                   function (tx, e)
                   {
-                     logDbError("DELETE error: " + e.message, "", 172);
+                     logDbError("DELETE error: " + e.message, "", 174);
                      return true; // rollback
                   }
                );
@@ -177,7 +179,7 @@ function insertWebSQLRow(item)
          },
          function (tx, e)
          {
-            logDbError("SELECT error: " + e.target.error.message, "", 180);
+            logDbError("SELECT error: " + e.message, "", 182);
             return true; // rollback
          });
    }, onErrorWebSQL, onSuccessWebSQL);
@@ -218,7 +220,7 @@ function getOlderWebSQLItems(url, date, count, inclusive, callback)
          },
          function (tx, e)
          {
-            logDbError("SELECT error: " + e.target.error.message, "", 220);
+            logDbError("SELECT error: " + e.message, "", 223);
             return true; // rollback
          });
    }, onErrorWebSQL, onSuccessWebSQL);
@@ -238,7 +240,7 @@ function getMaxWebSQLItemStamp(callback)
          },
          function (tx, e)
          {
-            logDbError("SELECT error: " + e.target.error.message, "", 241);
+            logDbError("SELECT error: " + e.message, "", 243);
             return true; // rollback
          });
    }, onErrorWebSQL, onSuccessWebSQL);
@@ -258,7 +260,7 @@ function webSQLItemExists(url, callback)
          },
          function (tx, e)
          {
-            logDbError("SELECT error: " + e.target.error.message, "", 261);
+            logDbError("SELECT error: " + e.message, "", 263);
             return true; // rollback
          });
    }, onErrorWebSQL, onSuccessWebSQL);
@@ -271,35 +273,59 @@ function webSQLItemExists(url, callback)
 
 function createIndexedDB()
 {
-   let request = window.indexedDB.open(dbName, 1);
+   let db = window.indexedDB.open(dbName, indexedDbVersion);
 
-   request.onerror = function(e)
+   db.onerror = function (e)
    {
-      logDbError("Unable to open IndexedDB", "", 278);
+      logDbError("Unable to open IndexedDB", "", 280);
       return true; // rollback
    };
 
-   request.onsuccess = function(e)
+   db.onsuccess = function (e)
    {
+      console.log("Opened IndexedDB");
    };
 
-   request.onupgradeneeded = function (e)
+   db.onupgradeneeded = function (e)
    {
-      let db = e.target.result;
+      let store = e.target.result;
+      createIndexedDBStore(store);
+   };
+}
 
-      let objectStore = db.createObjectStore("rss_item", { keyPath: "rowid", autoIncrement: true });
-      objectStore.createIndex("feed_name", "feed_name", { unique: false });
-      objectStore.createIndex("ins_date", "ins_date", { unique: false });
-      objectStore.createIndex("pub_date", "pub_date", { unique: false });
-      objectStore.createIndex("title", "title", { unique: false });
-      objectStore.createIndex("description", "description", { unique: false });
-      objectStore.createIndex("url", "url", { unique: true });
 
-      objectStore.transaction.oncomplete = function (e)
-      {
-         let t = db.transaction("rss_item", "readwrite").objectStore("rss_item").count();
-         console.log("IndexedDB created.");
-      };
+function createIndexedDBStore(store)
+{
+   let objectStore = store.createObjectStore("rss_item", { keyPath: "rowid", autoIncrement: true });
+   objectStore.createIndex("feed_name", "feed_name", { unique: false });
+   objectStore.createIndex("ins_date", "ins_date", { unique: false });
+   objectStore.createIndex("pub_date", "pub_date", { unique: false });
+   objectStore.createIndex("title", "title", { unique: false });
+   objectStore.createIndex("description", "description", { unique: false });
+   objectStore.createIndex("url", "url", { unique: true });
+
+   objectStore.transaction.oncomplete = function (e)
+   {
+      let t = store.transaction("rss_item", "readwrite").objectStore("rss_item").count();
+      console.log("IndexedDB created.");
+   };
+}
+
+
+function deleteIndexedDB()
+{
+   var del = window.indexedDB.deleteDatabase(dbName);
+
+   del.onerror = function (e)
+   {
+      logDbError("IndexedDb delete error: " + e.message, "", 321);
+   };
+
+   del.onsuccess = function (e)
+   {
+      logDbError("Damaged IndexedDb deleted", "", 326);
+
+      createIndexedDB();
    };
 }
 
@@ -313,14 +339,15 @@ function insertIndexedDBObj(item)
       pub_date: new Date(item.pubDate).getTime(),
       title: item.title,
       description: item.description,
+      description: item.description,
       url: item.url
    };
 
-   let db = window.indexedDB.open(dbName, 1);
+   let db = window.indexedDB.open(dbName, indexedDbVersion);
 
    db.onerror = function (e)
    {
-      logDbError("Unable to open IndexedDB: " + e.message, "", 323);
+      logDbError("Unable to open IndexedDB: " + e.message, "", 350);
       return true; // rollback
    };
 
@@ -330,7 +357,9 @@ function insertIndexedDBObj(item)
 
       if (!store.objectStoreNames.contains("rss_item"))
       {
-         logDbError("IndexedDB rss datastore was deleted", "", 333);
+         logDbError("IndexedDB rss_item store was deleted", "", 360);
+         deleteIndexedDB();
+
          return true;
       }
 
@@ -368,8 +397,8 @@ function insertIndexedDBObj(item)
 
                openC.onerror = function (e2)
                {
-                  logDbError("IndexedDb insert failed: " + e2.target.error.message,
-                     "", 371);
+                  logDbError("IndexedDb insert failed: " + e2.message,
+                     "", 400);
 
                   return true; // rollback
                }
@@ -378,7 +407,7 @@ function insertIndexedDBObj(item)
 
          countAct.onerror = function (e3)
          {
-            logDbError("IndexedDb insert failed: " + e3.target.error.message, "", 381);
+            logDbError("IndexedDb insert failed: " + e3.message, "", 410);
 
             return true; // rollback
          }
@@ -386,7 +415,7 @@ function insertIndexedDBObj(item)
 
       addAct.onerror = function (e)
       {
-         logDbError("IndexedDb insert failed: " + e.target.error.message, "", 389);
+         logDbError("IndexedDb insert failed: " + e.message, "", 418);
 
          return true; // rollback
       }
@@ -398,7 +427,7 @@ function insertIndexedDBObj(item)
 
       tx.onerror = function (e)
       {
-         logDbError("IndexedDb insert failed: " + e.target.error.message, "", 401);
+         logDbError("IndexedDb insert failed: " + e.message, "", 430);
 
          return true; // rollback
       };
@@ -409,11 +438,13 @@ function insertIndexedDBObj(item)
 // get older items for infinite scroll
 function getOlderIndexedDBItems(url, insDate, count, inclusive, callback)
 {
-   let db = window.indexedDB.open(dbName, 1);
+   let db = window.indexedDB.open(dbName, indexedDbVersion);
 
    db.onerror = function (e)
    {
-      logDbError("Unable to open IndexedDB: " + e, "", 416);
+      logDbError("Unable to open IndexedDB: " + e, "", 445);
+      callback(null);
+
       return true; // rollback
    };
 
@@ -423,7 +454,10 @@ function getOlderIndexedDBItems(url, insDate, count, inclusive, callback)
 
       if (!store.objectStoreNames.contains("rss_item"))
       {
-         logDbError("IndexedDB rss datastore was deleted", "", 426);
+         logDbError("IndexedDB rss datastore was deleted", "", 457);
+         deleteIndexedDB();
+         callback(null);
+
          return true;
       }
 
@@ -451,8 +485,8 @@ function getOlderIndexedDBItems(url, insDate, count, inclusive, callback)
 
       tx.onerror = function (e3)
       {
-         logDbError("IndexedDB getOlderIndexedDBItems failed: " + e3.target.error.message,
-            "", 454);
+         logDbError("IndexedDB getOlderIndexedDBItems failed: " + e3.message,
+            "", 488);
 
          return true; // rollback
       };
@@ -524,8 +558,10 @@ function getIndexedDBItemsFromCursor(rssItem, url, insDate, count, inclusive, ca
 
    openC.onerror = function (e)
    {
-      logDbError("IndexedDB getIndexedDBItemsFromCursor failed: " + e.target.error.message,
-         "", 513);
+      logDbError("IndexedDB getIndexedDBItemsFromCursor failed: " + e.message,
+         "", 561);
+
+      callback(null);
 
       return true; // rollback
    }
@@ -558,11 +594,13 @@ function pushItemFromCursor(items, cursor)
 
 function getMaxIndexedDBItemStamp(callback)
 {
-   let db = window.indexedDB.open(dbName, 1);
+   let db = window.indexedDB.open(dbName, indexedDbVersion);
 
    db.onerror = function (e)
    {
-      logDbError("Unable to open IndexedDB: " + e, "", 551);
+      logDbError("Unable to open IndexedDB: " + e, "", 601);
+      callback(null);
+
       return true; // rollback
    };
 
@@ -572,7 +610,10 @@ function getMaxIndexedDBItemStamp(callback)
 
       if (!store.objectStoreNames.contains("rss_item"))
       {
-         logDbError("IndexedDB rss datastore was deleted", "", 561);
+         logDbError("IndexedDB rss_item store was deleted", "", 613);
+         deleteIndexedDB();
+         callback(null);
+
          return true;
       }
 
@@ -596,8 +637,10 @@ function getMaxIndexedDBItemStamp(callback)
 
       tx.onerror = function (e3)
       {
-         logDbError("IndexedDB getMaxIndexedDBItemStamp failed: " + e3.target.error.message,
-            "", 585);
+         logDbError("IndexedDB getMaxIndexedDBItemStamp failed: " + e3.message,
+            "", 640);
+
+         callback(null);
 
          return true; // rollback
       };
@@ -607,11 +650,13 @@ function getMaxIndexedDBItemStamp(callback)
 
 function indexedDBItemExists(url, callback)
 {
-   let db = window.indexedDB.open(dbName, 1);
+   let db = window.indexedDB.open(dbName, indexedDbVersion);
 
    db.onerror = function (e)
    {
-      logDbError("Unable to open IndexedDB: " + e, "", 600);
+      logDbError("Unable to open IndexedDB: " + e, "", 657);
+      callback(null);
+
       return true; // rollback
    };
 
@@ -621,7 +666,10 @@ function indexedDBItemExists(url, callback)
 
       if (!store.objectStoreNames.contains("rss_item"))
       {
-         logDbError("IndexedDB rss datastore was deleted", "", 610);
+         logDbError("IndexedDB rss_item store was deleted", "", 669);
+         deleteIndexedDB();
+         callback(null);
+
          return true;
       }
 
@@ -650,8 +698,10 @@ function indexedDBItemExists(url, callback)
 
       tx.onerror = function (e3)
       {
-         logDbError("IndexedDB indexedDBItemExists failed: " + e3.target.error.message,
-            "", 639);
+         logDbError("IndexedDB indexedDBItemExists failed: " + e3.message,
+            "", 701);
+
+         callback(null);
 
          return true; // rollback
       };
