@@ -1,35 +1,29 @@
 === OVERVIEW ==================================================================
 
-Need to:
-* Offline keyword search
-* Cross browser testing.
-* Enable switching between CSS themes
-* Find use for Drag and drop
-
-Site that
-  * queries RSS feeds within a process that can be executed as either a console app,
+Site that:
+Â  * queries RSS feeds within a process that can be executed as either a console app,
     Windows service, or Azure WebJob 
-  * stores historical items in server DB
+Â  * stores historical items in server DB
 
-  * publishes feed of latest 100 items, which are rendered in the browser via
+Â  * publishes feed of latest 100 items, which are rendered in the browser via
     a referenced XSLT
   * pushes new items to browser clients via SSE
-  * recovers from client disconnects by pushing catchup item messages,
+Â  * recovers from client disconnects by pushing catchup item messages,
     using the Last-Event-ID header (Firefox incompatible)
   * retrieves a set of catchup items on initial page launch (only if on LAN or WAN).
-  * filters images and feed 'flare' before pushing to clients
+Â  * filters images and feed 'flare' before pushing to clients
 
-  * caches latest 1000 items in browser storage
-  * enables infinite scrolling of past 1000 items held in browser storage
+Â  * caches latest 1000 items in browser storage
+Â  * enables infinite scrolling of past 1000 items held in browser storage
 
   * allows server feed management
 
   * is responsive to device screen size
-  * allows user to set font size, saving preference in browser's local storage
-  * highlights items which contain user-defined keywords
-  * allows searching by keyword, and download of results as XSLX using OpenXML
+Â  * allows user to set font size, saving preference in browser's local storage
+Â  * highlights items which contain user-defined keywords
+Â  * allows searching by keyword, and download of results as XSLX using OpenXML
 
-  * logs system warnings and errors to server DB
+Â  * logs system warnings and errors to server DB
   * has been validated with unit tests
   * exposes a WCF service which responds to both SOAP and JSON/HTTP requests
   * exposes a WebAPI service which provides RESTful access
@@ -37,35 +31,35 @@ Site that
   * graphs trending keywords over a 8-72hr time range, using HTML Canvas API
 
 Demonstrates:
-   * C#
+Â  Â * C#
    * ADO.NET
-   * JavaScript
-   * Regex
+Â  Â * JavaScript
+Â  Â * Regex
    * LINQ
-   * HTML
-   * CSS
-   * Responsive CSS
-   * MVC
-   * WCF
+Â  Â * HTML
+Â  Â * CSS
+Â  Â * Responsive CSS
+Â  Â * MVC
+Â  Â * WCF
    * WebAPI
-   * SOAP
-   * REST
-   * SSE
+Â  Â * SOAP
+Â  Â * REST
+Â  Â * SSE
    * Web Workers
-   * WebSQL
-   * IndexedDB
-   * Web storage
-   * SQL
-   * RSS
-   * OpenXML
-   * XML
-   * XSLT
-   * XPath
+Â  Â * WebSQL
+Â  Â * IndexedDB
+Â  Â * Web storage
+Â  Â * SQL
+Â  Â * RSS
+Â  Â * OpenXML
+Â  Â * XML
+Â  Â * XSLT
+Â  Â * XPath
    * SVG
    * Canvas
-   * log4net
+Â  Â * log4net
    * Windows system services
-   * Azure
+Â  Â * Azure
 
 
 
@@ -106,7 +100,6 @@ CREATE VIEW v_rss_item AS SELECT i.item_id [item_id],
   i.xml [xml],
   f.title [feed_title] FROM 
 rss_item i, rss_feed f WHERE i.feed_id = f.feed_id;
-
 
 CREATE TABLE state (
    name       NVARCHAR(25)  NOT NULL,
@@ -199,16 +192,20 @@ BEGIN
 END;
 go
 
+# https://stackoverflow.com/questions/1007697/how-to-strip-all-non-alphabetic-characters-from-string-in-sql-server
+CREATE FUNCTION [dbo].[ToAlpha](@temp NVARCHAR(4000))
+RETURNS NVARCHAR(4000)
+AS
+BEGIN
+   DECLARE @keep_values AS NVARCHAR(50)
+   SET @keep_values = '%[^a-z^ ]%'
 
-=== CREATE CERTIFICATES =======================================================
+   WHILE PATINDEX(@keep_values, @temp) > 0
+      SET @temp = STUFF(@temp, PATINDEX(@keep_values, @temp), 1, '')
 
-makecert -r -pe -n "CN=Blasingame" -sky exchange Blasingame.cer -sv Blasingame.pvk
-"c:\program files (x86)\windows kits\8.1\bin\x86\pvk2pfx.exe" -pvk Blasingame.pvk -spc Blasingame.cer -pfx Blasingame.pfx
-
-makecert -r -pe -n "CN=Blasingame Client" -sky exchange BlasingameClient.cer -sv BlasingameClient.pvk
-"c:\program files (x86)\windows kits\8.1\bin\x86\pvk2pfx.exe" -pvk BlasingameClient.pvk -spc BlasingameClient.cer -pfx BlasingameClient.pfx
-
-passwords for all is 8675309
+   RETURN @temp
+END;
+go
 
 === RSS ELEMENTS ==============================================================
 
@@ -311,12 +308,3 @@ wfw        : http://wellformedweb.org/CommentAPI/
 /rss/channel/item/           title
 /rss/channel/item/           title/#cdata-section
 /rss/channel/item/           updateDate
-
-
-
-
-
-=== MISC ======================================================================
-
-Create video from time-lapse screen captures:
-   ffmpeg -i c:\temp\ScreenCapture\%6d.png -framerate 10 -r 10 -vf format=yuv420p test.mp4
