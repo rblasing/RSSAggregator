@@ -575,12 +575,30 @@ WHERE i.ins_date > DATEADD(HOUR, -@hour, GETUTCDATE()) AND word NOT IN (SELECT i
 
          try
          {
-            t = _dbConn.BeginTransaction();
             cmd = _dbConn.CreateCommand();
+
+            // determine whether UdfSplitString is installed on the target
+            // SQL Server
+            cmd.CommandText = @"SELECT COUNT(*) FROM information_schema.routines WHERE 
+               routine_name = 'UdfSplitString'";
+
+            int count = (int)cmd.ExecuteScalar();
+
+            // if not, then use equivalent in-code logic
+            if (count < 1)
+            {
+               UpdateCommonWordsWithoutUdf();
+
+               return;
+            }
+
+            t = _dbConn.BeginTransaction();
             cmd.CommandText = @"DELETE FROM common_word";
             cmd.CommandTimeout = 100000;
             cmd.Transaction = t;
             cmd.ExecuteNonQuery();
+
+            // TODO UdfSplitString can't be used in Azure
 
             cmd.CommandText = @"INSERT INTO common_word (word) SELECT TOP 100 CAST(word AS NVARCHAR(60)) [Keyword] FROM 
                rss_item AS i INNER JOIN rss_feed AS f ON 
@@ -614,6 +632,76 @@ WHERE i.ins_date > DATEADD(HOUR, -@hour, GETUTCDATE()) AND word NOT IN (SELECT i
 
 
       /// <summary>
+      /// Record the 100 most commonly-used words in all items stored in the
+      /// rss_item table without using the CLR UDF UdfSSplitString.
+      /// </summary>
+      public void UpdateCommonWordsWithoutUdf()
+      {
+         DbCommand cmd = null;
+         DbDataReader dr = null;
+         DbTransaction t = null;
+
+         try
+         {
+            List<string> candidateWords = new List<string>();
+
+            t = _dbConn.BeginTransaction();
+            cmd = _dbConn.CreateCommand();
+            cmd.CommandText = @"DELETE FROM common_word";
+            cmd.CommandTimeout = 100000;
+            cmd.Transaction = t;
+            cmd.ExecuteNonQuery();
+
+            // ToAlpha removes all characters from a string except letters and spaces
+            cmd.CommandText = @"SELECT TOP 2000 CAST(value AS NVARCHAR(80)), COUNT(*) FROM 
+rss_item CROSS APPLY STRING_SPLIT(dbo.ToAlpha(title + ' ' + description), ' ') 
+GROUP BY value ORDER BY COUNT(*) DESC";
+
+            dr = cmd.ExecuteReader(CommandBehavior.SingleResult);
+
+            while (dr.Read())
+               candidateWords.Add(dr.GetString(0));
+
+            dr.Close();
+
+            var filteredWords = SQLServerUDF.SQLServerUDF.FilterWordExclusions(
+               candidateWords.ToArray(), true, true, true, true, true);
+
+            var f = filteredWords.Cast<string>();
+            bool ok = true;
+
+            foreach (string word in f.Take(100))
+            {
+               cmd.CommandText = "INSERT INTO common_word (word) VALUES (@w)";
+               cmd.Parameters.Clear();
+               cmd.Parameters.Add(CreateParameter(cmd, "@w", DbType.String, word));
+
+               if (cmd.ExecuteNonQuery() < 1)
+               {
+                  ok = false;
+                  break;
+               }
+            }
+            
+            if (ok)
+            {
+               t.Commit();
+               t.Dispose();
+               t = null;
+            }
+         }
+         finally
+         {
+            t?.Rollback();
+            t?.Dispose();
+            t = null;
+
+            Cleanup(cmd, dr);
+         }
+      }
+
+
+      /// <summary>
       /// Return a list of item titles which contain profanity, with the
       /// profane words bleeped.
       /// </summary>
@@ -625,6 +713,7 @@ WHERE i.ins_date > DATEADD(HOUR, -@hour, GETUTCDATE()) AND word NOT IN (SELECT i
          try
          {
             cmd = _dbConn.CreateCommand();
+            cmd.CommandTimeout = 100000;
 
             // determine whether UdfBleep is installed on the target
             // SQL Server
@@ -642,12 +731,13 @@ WHERE i.ins_date > DATEADD(HOUR, -@hour, GETUTCDATE()) AND word NOT IN (SELECT i
             // this is slightly quicker
             cmd.CommandText = @"
 WITH tbl AS (
-   SELECT 
-      title 
+   SELECT
+      DISTINCT title, ins_date 
    FROM 
-      rss_item INNER JOIN profanity 
-   ON 
-      title LIKE ('%' + word + '%')
+      rss_item CROSS APPLY STRING_SPLIT(dbo.ToAlpha(title), ' ') 
+   WHERE
+      ins_date > DATEADD(MONTH, -3, CURRENT_TIMESTAMP) AND 
+      value IN (SELECT word FROM profanity)
 ) 
 SELECT 
    dbo.UdfBleep(tbl.title) 
@@ -696,7 +786,13 @@ WHERE
             if (profanity.Count <= 0)
                return null;
 
-            cmd.CommandText = "SELECT DISTINCT i.title FROM rss_item i, profanity p WHERE LOWER(i.title) LIKE '%' + p.word + '%'";
+            // using string_split and a UDF (ToAlpha) is much faster than LIKE
+            //cmd.CommandText = "SELECT DISTINCT i.title FROM rss_item i, profanity p WHERE i.title LIKE '%' + p.word + '%'";
+            cmd.CommandText = @"SELECT DISTINCT title, ins_date FROM rss_item CROSS APPLY STRING_SPLIT(dbo.ToAlpha(title), ' ') WHERE 
+ins_date > DATEADD(MONTH, -3, CURRENT_TIMESTAMP) AND 
+value IN (SELECT word FROM profanity)";
+
+            cmd.CommandTimeout = 100000;
             dr = cmd.ExecuteReader(CommandBehavior.SingleResult);
             List<string> titles = new List<string>();
 
@@ -733,6 +829,7 @@ WHERE
          try
          {
             cmd = _dbConn.CreateCommand();
+            cmd.CommandTimeout = 100000;
             cmd.CommandText = procName;
             cmd.CommandType = CommandType.StoredProcedure;
 
@@ -754,8 +851,9 @@ WHERE
             cmd = _dbConn.CreateCommand();
 
             cmd.CommandText = @"SELECT title [Title] FROM rss_item WHERE 
-               title COLLATE sql_latin1_general_cp1_ci_as LIKE @tk OR 
-               xml.exist('/item/description/text()[contains(lower-case(.), sql:variable(""@dk""))]') = 1";
+               ins_date > DATEADD(MONTH, -3, CURRENT_TIMESTAMP) AND 
+               (title COLLATE sql_latin1_general_cp1_ci_as LIKE @tk OR 
+               xml.exist('/item/description/text()[contains(lower-case(.), sql:variable(""@dk""))]') = 1)";
 
             cmd.Parameters.Add(CreateParameter(cmd, "@tk", DbType.String, "%" + keyword.ToLower() + "%"));
             cmd.Parameters.Add(CreateParameter(cmd, "@dk", DbType.String, keyword.ToLower()));

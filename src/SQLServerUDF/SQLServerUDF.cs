@@ -216,6 +216,18 @@ namespace SQLServerUDF
 
          string[] words = Split(s);
 
+         return FilterWordExclusions(words, excludeArticles, excludeConjunctions,
+            excludePrepositions, excludePronouns, distinctOnly);
+      }
+
+
+      public static IEnumerable FilterWordExclusions(string[] words,
+         bool excludeArticles,
+         bool excludeConjunctions,
+         bool excludePrepositions,
+         bool excludePronouns,
+         bool distinctOnly)
+      {
          for (int idx = 0; idx < words.Length; idx++)
             words[idx] = TrimPunctuation(words[idx]).ToLower();
 

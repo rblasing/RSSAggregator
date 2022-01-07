@@ -253,6 +253,18 @@ namespace RSSTests
 
 
       [TestMethod]
+      public void UpdateCommonWordsWithoutUdfTest()
+      {
+         InitDb();
+         _dal.UpdateCommonWordsWithoutUdf();
+
+         SqlCommand cmd = new SqlCommand("SELECT COUNT(*) FROM common_word", _dbConn);
+         int count = (int)cmd.ExecuteScalar();
+         Assert.IsTrue(count > 0);
+      }
+
+
+      [TestMethod]
       public void GetBleepedTitlesTest()
       {
          InitDb();
